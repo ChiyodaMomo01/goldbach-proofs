@@ -70,7 +70,7 @@ theorem catalogue_trimmed_iff_of_negligible (width : ℕ → ℕ)
 
 private theorem width_pos (n : ℕ) : 0 < logWidth n := Nat.succ_pos _
 
-private theorem log_n_le_width (n : ℕ) (hn : 0<n) : Real.log n ≤ (logWidth n:ℝ) := by
+theorem log_n_le_width (n : ℕ) (hn : 0<n) : Real.log n ≤ (logWidth n:ℝ) := by
   have h := Nat.lt_pow_succ_log_self (by decide : 1<2) (n+2)
   have hpow : (n:ℝ) ≤ (2:ℝ)^(logWidth n) := by
     exact_mod_cast (show n ≤ 2^(logWidth n) by unfold logWidth; omega)
@@ -83,22 +83,27 @@ private theorem harmonic_le_log (Q : ℕ) : harmonicCutoff Q ≤ 1+Real.log Q :=
   simpa only [harmonicCutoff,one_div,harmonic_eq_sum_Icc,Rat.cast_sum,Rat.cast_inv,Rat.cast_natCast]
     using harmonic_le_one_add_log Q
 
+private theorem cutoff_le_width_sq (n : ℕ) : (catalogueCutoff n:ℝ) ≤ (logWidth n:ℝ)^2 := by
+  dsimp [catalogueCutoff,logWidth]
+  push_cast
+  nlinarith [show 0≤(Nat.log 2 (n+2):ℝ) by positivity]
+
+theorem cutoff_harmonic (n : ℕ) : harmonicCutoff (catalogueCutoff n) ≤
+    1+2*Real.log (logWidth n:ℝ) := by
+  have hm := Nat.le_log_of_pow_le (by decide : 1<2) (show 2^1 ≤ n+2 by omega)
+  have hQ : 0 < (catalogueCutoff n:ℝ) := by unfold catalogueCutoff; positivity
+  have hlog := Real.log_le_log hQ (cutoff_le_width_sq n)
+  rw [Real.log_pow] at hlog
+  exact (harmonic_le_log _).trans (add_le_add_right (by simpa using hlog) _)
+
 theorem prime_band_uniform (n : ℕ) (hn : 0<n) :
     |nearBulk (catalogueCutoff n) n (primeBandWidth n) (high n)| ≤
     (4*Real.log 4)*n*((1+2*Real.log (logWidth n:ℝ))^2/(logWidth n:ℝ)) := by
   let L := (logWidth n:ℝ)
   have hL : 0<L := by dsimp only [L]; exact_mod_cast width_pos n
   have hL1 : 1≤L := by dsimp only [L]; exact_mod_cast (show 1≤logWidth n from width_pos n)
-  have hq : (catalogueCutoff n:ℝ) ≤ L^2 := by
-    dsimp [catalogueCutoff,L,logWidth]
-    push_cast
-    nlinarith [show 0≤(Nat.log 2 (n+2):ℝ) by positivity]
-  have hm := Nat.le_log_of_pow_le (by decide : 1<2) (show 2^1 ≤ n+2 by omega)
-  have hQ : 0 < (catalogueCutoff n:ℝ) := by unfold catalogueCutoff; positivity
-  have hhl : harmonicCutoff (catalogueCutoff n) ≤ 1+2*Real.log L := by
-    have hlog := Real.log_le_log hQ hq
-    rw [Real.log_pow] at hlog
-    exact (harmonic_le_log _).trans (add_le_add_right (by simpa using hlog) _)
+  have hq : (catalogueCutoff n:ℝ) ≤ L^2 := cutoff_le_width_sq n
+  have hhl : harmonicCutoff (catalogueCutoff n) ≤ 1+2*Real.log L := cutoff_harmonic n
   have hh : 0 ≤ harmonicCutoff (catalogueCutoff n) := by unfold harmonicCutoff; positivity
   have hK : (primeBandWidth n:ℝ)*L^4 ≤ n := by
     dsimp [primeBandWidth,L]
@@ -112,7 +117,7 @@ theorem prime_band_uniform (n : ℕ) (hn : 0<n) :
       field_simp
     _ ≤ _ := by gcongr
 
-private theorem log_bound_ratio :
+theorem log_bound_ratio :
     Tendsto (fun x : ℝ => (1+2*Real.log x)^2/x) atTop (𝓝 0) := by
   have h1 : Tendsto (fun x : ℝ => 1/Real.sqrt x) atTop (𝓝 0) := by
     simpa [one_div,Function.comp_def] using (tendsto_inv_atTop_zero.comp Real.tendsto_sqrt_atTop)

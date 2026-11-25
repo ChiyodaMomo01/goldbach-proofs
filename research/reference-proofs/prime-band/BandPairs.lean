@@ -176,7 +176,7 @@ private theorem high_nonneg (n p : ℕ) : 0≤high n p := by
   unfold high
   split_ifs <;> positivity
 
-private theorem high_mass (n : ℕ) : (∑ p ∈ range (n+1), |high n p|) ≤ Real.log 4*n := by
+theorem high_mass (n : ℕ) : (∑ p ∈ range (n+1), |high n p|) ≤ Real.log 4*n := by
   refine le_trans ?_ (Chebyshev.theta_le_log4_mul_x (show 0≤(n:ℝ) by positivity))
   rw [Chebyshev.theta_eq_sum_Icc,Nat.floor_natCast,sum_filter]
   have eq : Finset.Icc 0 n = range (n+1) := by ext k; simp
@@ -187,7 +187,7 @@ private theorem high_mass (n : ℕ) : (∑ p ∈ range (n+1), |high n p|) ≤ Re
   unfold high
   split_ifs <;> first | exact le_rfl | positivity
 
-private theorem high_le_log (n p : ℕ) (hn : 0<n) (hp : p≤n) : |high n p| ≤ Real.log n := by
+theorem high_le_log (n p : ℕ) (hn : 0<n) (hp : p≤n) : |high n p| ≤ Real.log n := by
   rw [abs_of_nonneg (high_nonneg n p)]
   unfold high
   have hlog : 0 ≤ Real.log n := Real.log_nonneg (by exact_mod_cast hn)

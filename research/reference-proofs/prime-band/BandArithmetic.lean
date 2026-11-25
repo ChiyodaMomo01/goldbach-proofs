@@ -165,7 +165,7 @@ open Finset
 
 noncomputable def harmonicCutoff (Q : ℕ) : ℝ := ∑ d ∈ Finset.Icc 1 Q, 1/(d:ℝ)
 
-private theorem harmonic_divisors (Q : ℕ) :
+theorem harmonic_divisors (Q : ℕ) :
     (∑ q ∈ Finset.Icc 1 Q, (q.divisors.card:ℝ)/(q:ℝ)) ≤ harmonicCutoff Q ^ 2 := by
   classical
   let F (p : ℕ × ℕ) : ℝ := (1/(p.1:ℝ))*(1/(p.2:ℝ))
@@ -203,7 +203,7 @@ private theorem harmonic_divisors (Q : ℕ) :
     _ ≤ ∑ p ∈ S ×ˢ S, F p := sum_le_sum_of_subset_of_nonneg sub (fun _ _ _ => by dsimp [F]; positivity)
     _ = _ := by simp [F, S, harmonicCutoff, sq, sum_product, sum_mul, mul_sum]; rw [sum_comm]
 
-private theorem ram_frequency_sum (q K : ℕ) : (∑ k ∈ Finset.Icc 1 K, |ram q k|) ≤
+theorem ram_frequency_sum (q K : ℕ) : (∑ k ∈ Finset.Icc 1 K, |ram q k|) ≤
     (K:ℝ)*q.divisors.card := by
   have one (k : ℕ) : |ram q k| ≤ ∑ d ∈ q.divisors, if d ∣ k then (d:ℝ) else 0 := by
     refine (Finset.abs_sum_le_sum_abs ..).trans (sum_le_sum (fun d _ => ?_))

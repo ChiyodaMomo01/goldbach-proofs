@@ -23,7 +23,7 @@ INPUTS = {
     "UpstreamScale": ("4a29eb4239368944efb5c486fe59e10d85629cbd", "L_goldbach_arc_cutoff_scale",
                       "831e4b6c6e457aefb39e4d95b3d78f264e17bd7dd82ef30c965e381e8239be54"),
 }
-MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes")
+MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes", "FirstBand")
 
 
 def verified_input(commit, name, digest):
