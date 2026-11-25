@@ -292,16 +292,16 @@ theorem classEnergy_le_profile (n P : ℕ) (hP : 0<P) (b : ℕ → ℝ) : classE
 
 /-- The prime-pair input may be proved for the classical untruncated count and any
 admissible periodic profile. -/
-theorem outer_iff_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ → ℝ)
+theorem class_variance_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ → ℝ)
     (hp : ∀ n≥2, 0<period n ∧ period n ≤ logWidth n)
     (hv : ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
       let Q := catalogueCutoff n
       (Q:ℝ)*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n),
         (goldbachCount (n-k)+goldbachCount (n+k)-b n (k % period n))^2)*
         (1+diagonalEnergy Q (logWidth n)) ≤ δ*(n:ℝ)^3) :
-    FrozenBulk.BulkFloor ↔ ∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
-      outerAndSmall n ≤ pairMass n 0 (high n)*(1-arcLength (catalogueCutoff n) n) + ε*n := by
-  apply outer_iff_of_variance period hp
+    ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      (catalogueCutoff n:ℝ)*classEnergy n (period n)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))
+        ≤ δ*(n:ℝ)^3 := by
   intro δ hδ
   obtain ⟨A,hA⟩ := hv (δ/4) (by positivity)
   obtain ⟨M,hM⟩ := truncation_variance_negligible (δ/4) (by positivity)
@@ -329,6 +329,19 @@ theorem outer_iff_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ �
   have ht : Q*T*J ≤ (δ/4)*(n:ℝ)^3 := hM n (by omega)
   change Q*classEnergy n (period n)*J ≤ _
   nlinarith only [mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ec hQ) hJ,he,ht]
+
+/-- The prime-pair input may be proved for the classical untruncated count and any
+admissible periodic profile. -/
+theorem outer_iff_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ → ℝ)
+    (hp : ∀ n≥2, 0<period n ∧ period n ≤ logWidth n)
+    (hv : ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      let Q := catalogueCutoff n
+      (Q:ℝ)*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n),
+        (goldbachCount (n-k)+goldbachCount (n+k)-b n (k % period n))^2)*
+        (1+diagonalEnergy Q (logWidth n)) ≤ δ*(n:ℝ)^3) :
+    FrozenBulk.BulkFloor ↔ ∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
+      outerAndSmall n ≤ pairMass n 0 (high n)*(1-arcLength (catalogueCutoff n) n) + ε*n :=
+  outer_iff_of_variance period hp (class_variance_of_goldbach_profile period b hp hv)
 
 #print axioms goldbach_truncation
 #print axioms truncation_variance_negligible

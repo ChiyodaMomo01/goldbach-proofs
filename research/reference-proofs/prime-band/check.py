@@ -24,7 +24,8 @@ INPUTS = {
                       "831e4b6c6e457aefb39e4d95b3d78f264e17bd7dd82ef30c965e381e8239be54"),
 }
 MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes", "FirstBand", "PeriodicMass", "RamanujanEnergy",
-           "GoldbachTruncation")
+           "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
+           "SingularSeriesTransfer")
 
 
 def verified_input(commit, name, digest):
