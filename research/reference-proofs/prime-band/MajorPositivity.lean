@@ -126,7 +126,7 @@ theorem coefficient_factorization (n q : ℕ) (sq : Squarefree q) :
   have nz : (p:ℝ)-1≠0 := by linarith
   by_cases hd : p∣n <;> simp only [localSign,hd,ite_true,ite_false] <;> field_simp
 
-private def supportProduct (A : Finset ℕ) := ∏ p ∈ A, p
+def supportProduct (A : Finset ℕ) := ∏ p ∈ A, p
 
 private theorem support_sq (A : Finset ℕ) (pr : ∀ p∈A, Nat.Prime p) :
     Squarefree (supportProduct A) := by
@@ -136,7 +136,7 @@ private theorem support_sq (A : Finset ℕ) (pr : ∀ p∈A, Nat.Prime p) :
 noncomputable def windowKernel (Q q : ℕ) : ℝ :=
   if q≤Q then archimedeanMass ((Q:ℝ)/q) else 0
 
-private theorem model_support_sum (n Q : ℕ) :
+theorem model_support_sum (n Q : ℕ) :
     (∑ q ∈ Icc 1 Q, ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2*archimedeanMass ((Q:ℝ)/q)) =
     ∑ A ∈ (Nat.primesLE Q).powerset, (∏ p ∈ A, localSign n p)*windowKernel Q (supportProduct A) := by
   let D := (Icc 1 Q).filter Squarefree

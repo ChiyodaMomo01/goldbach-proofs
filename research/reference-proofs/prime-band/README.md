@@ -305,6 +305,40 @@ The third limit uses the certified major-arc approximation and the error from re
 
 **A consequence for individual targets.** Fix $d\ge1$ and a tolerance $\varepsilon>0$. Every sufficiently large window $T_j$ contains a single target $n$ satisfying both $I(n)\ge-\varepsilon n$ and $R(n)\ge M(n)-\varepsilon n$. If all the integrals in the window fell below $-\varepsilon n/2$, their weighted mean would stay below $-\varepsilon/2$. The pointwise approximation transfers the resulting witness to the count bound with the remaining half of the tolerance. Moreover, for any real $B$, one can choose a fixed factorial modulus $d=k!$, with $k\ge2$, so that every sufficiently large window contains an even witness with $R(n)\ge Bn$ as well as the requested integral bound. The factorial determines the progression. Its multiples supply the witnesses. ([Witnesses and quantifiers](ProgressionWitness.lean))
 
+### Shortfalls and exceptional targets
+
+Fix a positive modulus $d$ and use the same window $T_j$ and total target weight $W_j$ as above. For each target $n$, define its downward error $D(n)=\max\{M(n)-R(n),0\}$. For a fixed threshold $\varepsilon>0$, let $P_j(\varepsilon)$ be the fraction of the $j$ targets in $T_j$ with $D(n)>\varepsilon n$. Then the following four assertions are **equivalent**.
+
+1. The mean shortfall $\sum_{n\in T_j}D(n)/W_j$ tends to zero.
+2. For every fixed $\varepsilon>0$, the exceptional fraction $P_j(\varepsilon)$ tends to zero.
+3. The mean absolute error $\sum_{n\in T_j}|R(n)-M(n)|/W_j$ tends to zero.
+4. The mean negative part of the frozen integral, $\sum_{n\in T_j}\max\{-I(n),0\}/W_j$, tends to zero.
+
+The equivalences are proved unconditionally. Whether these limits vanish remains open in this formalization. The first implication to exceptional fractions is Markov's inequality. For its converse we proved a **uniform second-moment bound on the normalized shortfall**. There is a constant $C_d>0$ such that, for all sufficiently large $j$,
+
+$$
+\frac1j\sum_{n\in T_j}\left(\frac{D(n)}n\right)^2\le C_d.
+$$
+
+Since $R(n)\ge0$, only an upper bound for the model is needed for this estimate. The complete product over the absolute local factors bounds $|M(n)|/n$ by three times the normalized binary singular-series shape at $2n$. The existing second-moment bound for that shape then applies to even and odd targets. Cauchy–Schwarz bounds the exceptional contribution to the unweighted mean of $D(n)/n$ by $\sqrt{C_d P_j(\varepsilon)}$. Each remaining term is at most $\varepsilon$. The weights $n$ vary by a factor of at most two on the window. For assertion 3, the exact identity $|R-M|=(R-M)+2D$ uses the signed mean proved above. For assertion 4, taking the negative part changes differences by at most their original magnitude. ([Model majorant and second moment](ShortfallEnergy.lean), [four equivalent criteria](ShortfallDensity.lean))
+
+**Reduction using the classical input.** Let $S(n)$ denote the normalized binary singular-series shape defined in the reference proof, and let $c$ be the constant in the repository's explicit hypothesis `ClassicalMeanSquare c`. Under that hypothesis, $\sum_{n\in T_j}|R(n)-cnS(n)|/W_j\to0$. Cauchy–Schwarz gives this directly from the stated logarithmic saving. The triangle inequality in both directions then makes assertion 2 equivalent to $\sum_{n\in T_j}|M(n)-cnS(n)|/W_j\to0$. This last expression compares two explicit arithmetic models. The reduction retains `ClassicalMeanSquare c` as a hypothesis. ([Exact classical input](SingularSeriesTransfer.lean), [transfer to the catalogue model](ShortfallTransfer.lean))
+
+The optional shortfall diagnostic measures these quantities target by target. Here $d=2$, $j=\lfloor X/(2d)\rfloor$, and the threshold is $0.02n$. The two means divide by $W_j$ and the fraction divides by $j$. The observations are finite numerical measurements. ([Reproduction script](progression_means.py))
+
+| Scale $X$ | Targets | Targets above threshold | Fraction | Mean shortfall | Mean absolute error |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 16,384 | 4,096 | 2,579 | 62.96% | 0.05121850 | 0.06067887 |
+| 131,072 | 32,768 | 13,668 | 41.71% | 0.02042672 | 0.02692212 |
+| 1,048,576 | 262,144 | 36,192 | 13.81% | 0.00801253 | 0.01194450 |
+| 4,194,304 | 1,048,576 | 23,887 | 2.28% | 0.00443914 | 0.00712387 |
+
+```sh
+python3 research/reference-proofs/prime-band/progression_means.py --powers 12 14 17 20 22 --moduli 2 720 --shortfall 0.02
+```
+
+For scales through 4,096, the script checks every target by a direct prime-pair sum and an independent gcd formula for the model. At larger scales it checks the two endpoints, both extreme errors, and the targets nearest the threshold and zero. The output reports how many computed normalized deficits lie within $10^{-10}$ of the threshold. That count is zero in each row above.
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）

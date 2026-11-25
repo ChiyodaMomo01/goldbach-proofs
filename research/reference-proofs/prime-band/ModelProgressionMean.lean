@@ -230,6 +230,44 @@ private theorem progression_prefix_multiples (d k : ℕ) (hd : 0 < d) :
       exact ⟨Nat.mul_lt_mul_of_pos_left lt hd, dvd_mul_right ..⟩
   rw [progressionTotal, eq, sum_image (fun _ _ _ _ h => Nat.eq_of_mul_eq_mul_left hd h)]
 
+/-- The two pointwise discrepancies differ by a sublinear error at all large targets. -/
+theorem frozen_count_error_sublinear (ε : ℝ) (ep : 0 < ε) :
+    ∀ᶠ n : ℕ in atTop, |(FrozenBulk.deskI n (FrozenBulk.deskHigh n) (FrozenBulk.deskHigh n)).re -
+      (goldbachCount n-catalogueMajorModel n)| ≤ ε*n := by
+  filter_upwards [bulk_pair_model_error certified_major_model_fit (ε/2) (half_pos ep),
+    diagonal_error (ε/2) (half_pos ep)] with n arc diag
+  obtain ⟨lo, hi⟩ := abs_le.mp arc
+  exact abs_le.mpr ⟨by linarith only [lo,diag.2], by
+    linarith only [hi, diag.1, mul_nonneg ep.le (Nat.cast_nonneg (α:=ℝ) n)]⟩
+
+/-- A pointwise sublinear error stays negligible after summing over a dyadic progression. -/
+theorem dyadic_mean_of_sublinear (d : ℕ) (hd : 0 < d) (e : ℕ → ℝ)
+    (small : ∀ ε : ℝ, 0 < ε → ∀ᶠ n : ℕ in atTop, |e n| ≤ ε*n) :
+    Tendsto (fun j : ℕ => (∑ i ∈ Ico j (2*j), e (d*i)) /
+      (∑ i ∈ Ico j (2*j), (d:ℝ)*i)) atTop (𝓝 0) := by
+  apply Metric.tendsto_nhds.mpr
+  intro ε ep
+  obtain ⟨N,hN⟩ := eventually_atTop.mp (small (ε/2) (half_pos ep))
+  filter_upwards [eventually_ge_atTop N, eventually_ge_atTop 1] with j hj hj1
+  let W := ∑ i ∈ Ico j (2*j), (d:ℝ)*i
+  have wp : 0 < W := sum_pos' (fun i _ => by positivity) ⟨j, mem_Ico.mpr ⟨le_rfl,by omega⟩,
+    mul_pos (by exact_mod_cast hd) (by exact_mod_cast hj1)⟩
+  rw [Real.dist_eq, sub_zero, abs_div, abs_of_pos wp, div_lt_iff₀ wp]
+  apply (abs_sum_le_sum_abs ..).trans_lt
+  calc
+    _ ≤ ∑ i ∈ Ico j (2*j), (ε/2)*((d:ℝ)*i) := by
+      apply sum_le_sum
+      intro i hi
+      simpa only [Nat.cast_mul] using hN (d*i) (hj.trans ((mem_Ico.mp hi).1.trans (Nat.le_mul_of_pos_left _ hd)))
+    _ = ε/2*W := (mul_sum ..).symm
+    _ < _ := mul_lt_mul_of_pos_right (by linarith) wp
+
+theorem progression_count_window (d j : ℕ) (hd : 0 < d) :
+    progressionTotal (2*d*j) d - progressionTotal (d*j) d =
+      ∑ i ∈ Ico j (2*j), goldbachCount (d*i) := by
+  rw [show 2*d*j = d*(2*j) by ring, progression_prefix_multiples d _ hd,
+    progression_prefix_multiples d _ hd, sum_Ico_eq_sub _ (by omega)]
+
 /-- The actual frozen high-prime minor-arc integral has zero signed weighted
 mean on the multiples of any fixed positive modulus. -/
 theorem dyadic_minor_arc_mean (d : ℕ) (hd : 0 < d) :
@@ -238,37 +276,9 @@ theorem dyadic_minor_arc_mean (d : ℕ) (hd : 0 < d) :
       (∑ i ∈ Ico j (2*j), (d:ℝ)*i)) atTop (𝓝 0) := by
   let F (n : ℕ) := (FrozenBulk.deskI n (FrozenBulk.deskHigh n) (FrozenBulk.deskHigh n)).re
   let e (n : ℕ) := F n - (goldbachCount n - catalogueMajorModel n)
-  have small (ε : ℝ) (ep : 0 < ε) : ∀ᶠ n : ℕ in atTop, |e n| ≤ ε*n := by
-    filter_upwards [bulk_pair_model_error certified_major_model_fit (ε/2) (half_pos ep),
-      diagonal_error (ε/2) (half_pos ep)] with n arc diag
-    obtain ⟨lo, hi⟩ := abs_le.mp arc
-    dsimp [e,F]
-    exact abs_le.mpr ⟨by linarith only [lo,diag.2], by
-      linarith only [hi, diag.1, mul_nonneg ep.le (Nat.cast_nonneg (α:=ℝ) n)]⟩
-  have remainder : Tendsto (fun j : ℕ => (∑ i ∈ Ico j (2*j), e (d*i)) /
-      (∑ i ∈ Ico j (2*j), (d:ℝ)*i)) atTop (𝓝 0) := by
-    apply Metric.tendsto_nhds.mpr
-    intro ε ep
-    obtain ⟨N,hN⟩ := eventually_atTop.mp (small (ε/2) (half_pos ep))
-    filter_upwards [eventually_ge_atTop N, eventually_ge_atTop 1] with j hj hj1
-    let W := ∑ i ∈ Ico j (2*j), (d:ℝ)*i
-    have wp : 0 < W := sum_pos' (fun i _ => by positivity) ⟨j, mem_Ico.mpr ⟨le_rfl,by omega⟩,
-      mul_pos (by exact_mod_cast hd) (by exact_mod_cast hj1)⟩
-    rw [Real.dist_eq, sub_zero, abs_div, abs_of_pos wp, div_lt_iff₀ wp]
-    apply (abs_sum_le_sum_abs ..).trans_lt
-    calc
-      _ ≤ ∑ i ∈ Ico j (2*j), (ε/2)*((d:ℝ)*i) := by
-        apply sum_le_sum
-        intro i hi
-        simpa only [Nat.cast_mul] using hN (d*i) (hj.trans ((mem_Ico.mp hi).1.trans (Nat.le_mul_of_pos_left _ hd)))
-      _ = ε/2*W := (mul_sum ..).symm
-      _ < _ := mul_lt_mul_of_pos_right (by linarith) wp
-  have count (j : ℕ) : progressionTotal (2*d*j) d - progressionTotal (d*j) d =
-      ∑ i ∈ Ico j (2*j), goldbachCount (d*i) := by
-    rw [show 2*d*j = d*(2*j) by ring, progression_prefix_multiples d _ hd,
-      progression_prefix_multiples d _ hd, sum_Ico_eq_sub _ (by omega)]
+  have remainder := dyadic_mean_of_sublinear d hd e frozen_count_error_sublinear
   have lim := (dyadic_count_minus_model_mean d hd).add remainder
-  simp only [count, zero_add, ← add_div, ← sum_sub_distrib, ← sum_add_distrib] at lim
+  simp only [fun j => progression_count_window d j hd, zero_add, ← add_div, ← sum_sub_distrib, ← sum_add_distrib] at lim
   simpa only [e, add_sub_cancel] using lim
 
 #print axioms nonresonant_model_window

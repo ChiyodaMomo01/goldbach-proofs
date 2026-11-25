@@ -2,7 +2,7 @@
 
 import argparse
 from functools import lru_cache
-from math import cos, fsum, gcd, isqrt, pi
+from math import cos, fsum, gcd, isfinite, isqrt, pi
 from typing import NamedTuple
 
 import numpy as np
@@ -127,11 +127,50 @@ def compare(weights, counts, ratios, limit, modulus, mu, phi):
     return Window(limit, modulus, len(targets), pairs, model)
 
 
+def shortfall_window(weights, counts, ratios, limit, modulus, threshold, mu, phi):
+    """Measure deficits on exactly the index interval [j,2j) used by the theorems."""
+    j = limit // (2 * modulus)
+    if j == 0:
+        return
+    targets = modulus * np.arange(j, 2*j)
+    errors = targets * ratios[targets] - counts[targets]
+    relative = errors / targets
+    deficits = np.maximum(errors, 0)
+    total = sum_multiples(int(targets[0]) - 1, int(targets[-1]), modulus)
+    signed = -float(errors.sum()) / total
+    deficit = float(deficits.sum()) / total
+    absolute = float(np.abs(errors).sum()) / total
+    np.testing.assert_allclose(absolute, signed + 2*deficit, rtol=1e-10, atol=1e-12)
+
+    # Recompute every small-window target and the most sensitive large-window targets.
+    indices = range(j) if limit <= 4096 else {
+        0, j-1, int(relative.argmax()), int(relative.argmin()),
+        int(np.abs(relative-threshold).argmin()), int(np.abs(relative).argmin()),
+    }
+    for index in indices:
+        n = int(targets[index])
+        direct_count = float(np.dot(weights[:n+1], weights[n::-1])) / n
+        cutoff = ((n+2).bit_length()-1)**2
+        direct_ratio = fsum(
+            mu[q // gcd(q, n)] * arc_mass(cutoff / q) / (phi[q] * phi[q // gcd(q, n)])
+            for q in range(1, cutoff+1) if mu[q]
+        )
+        np.testing.assert_allclose(relative[index], direct_ratio-direct_count, rtol=1e-9, atol=1e-10)
+    normalized_deficits = np.maximum(relative, 0)
+    bad = int(np.count_nonzero(normalized_deficits > threshold))
+    near = int(np.count_nonzero(np.abs(normalized_deficits-threshold) <= 1e-10))
+    print(limit, modulus, j, bad, near, f'{signed:+.8f}', f'{deficit:.8f}', f'{absolute:.8f}')
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--powers', type=int, nargs='+', default=[14, 17, 20])
     parser.add_argument('--moduli', type=int, nargs='+', default=[2, 6, 24, 120, 720])
+    parser.add_argument('--shortfall', type=float, metavar='EPSILON',
+                        help='measure deficits exceeding EPSILON times the target on aligned windows')
     args = parser.parse_args()
+    if args.shortfall is not None and (not isfinite(args.shortfall) or args.shortfall <= 0):
+        parser.error('shortfall threshold must be finite and positive')
     if min(args.powers) < 1 or min(args.moduli) < 1:
         parser.error('powers and moduli must be positive')
     limit = 2 ** max(args.powers)
@@ -146,6 +185,12 @@ def main():
     for z in (1, 1.5, 5):
         direct = 2 * quad(lambda t: float(np.sinc(t))**2, 0, z)[0]
         np.testing.assert_allclose(arc_mass(z), direct, rtol=1e-12)
+    if args.shortfall is not None:
+        print('limit modulus targets exceedances near_threshold signed_mean shortfall_mean absolute_mean')
+        for power in args.powers:
+            for modulus in args.moduli:
+                shortfall_window(weights, counts, ratios, 2**power, modulus, args.shortfall, mu, phi)
+        return
     print('limit modulus targets sum_R/sum_n sum_M/sum_n difference')
     for power in args.powers:
         for modulus in args.moduli:
