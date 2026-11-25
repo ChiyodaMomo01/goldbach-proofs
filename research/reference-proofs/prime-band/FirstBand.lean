@@ -255,7 +255,7 @@ private theorem loss_difference (n : ℕ) :
   intro k _
   by_cases h : k≤firstBandEnd n <;> simp [h]
 
-private theorem trimmed_as_loss (n : ℕ) :
+theorem trimmed_as_loss (n : ℕ) :
     trimmedBulk (catalogueCutoff n) n (primeBandWidth n) (high n) =
     pairMass n 0 (high n)*(1-arcLength (catalogueCutoff n) n) -
       firstBandSum n (primeBandWidth n) n (majorCoefficient (catalogueCutoff n) n) := by

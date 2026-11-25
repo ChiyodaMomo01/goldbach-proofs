@@ -195,9 +195,9 @@ theorem first_band_truncation (n k : ℕ) (hscale : 2*(catalogueCutoff n)^2<n)
 
 /-- On the catalogue window the full squared truncation error consumes a vanishing
 fraction of the variance budget, before any residue-class centering. -/
-theorem truncation_variance_negligible (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n≥N,
+theorem truncation_variance_negligible (ε : ℝ) (hε : 0<ε) (lower : ℕ → ℕ := logWidth) : ∃ N : ℕ, ∀ n≥N,
     let Q := catalogueCutoff n
-    let B := logWidth n
+    let B := lower n
     (Q:ℝ) * (∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n), (truncationError n k)^2) *
       (1+diagonalEnergy Q B) ≤ ε*(n:ℝ)^3 := by
   let C := 12*Real.log 4
@@ -234,8 +234,8 @@ theorem truncation_variance_negligible (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, �
         simpa only [mul_pow,sq_abs] using
           (sq_le_sq₀ (mul_nonneg (abs_nonneg _) hdpos.le) (mul_nonneg hC (Nat.cast_nonneg _))).mpr h
       _ = _ := by simp
-  have hJ : 1+diagonalEnergy Q (logWidth n) ≤ 4*(d:ℝ) := by
-    have h := (diagonalEnergy_le_harmonic Q (logWidth n)).trans (cutoff_harmonic n)
+  have hJ : 1+diagonalEnergy Q (lower n) ≤ 4*(d:ℝ) := by
+    have h := (diagonalEnergy_le_harmonic Q (lower n)).trans (cutoff_harmonic n)
     have hw : (logWidth n:ℝ) = (d:ℝ)+1 := by simp [logWidth,d]
     rw [hw] at h
     linarith [Real.log_le_sub_one_of_pos (show 0<(d:ℝ)+1 by positivity)]
@@ -246,7 +246,7 @@ theorem truncation_variance_negligible (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, �
     have hh := (div_le_iff₀ hε).mp (show 4*C^2/ε≤d by linarith)
     linarith
   have hSn : 0≤S := by dsimp [S]; positivity
-  change (Q:ℝ)*S*(1+diagonalEnergy Q (logWidth n)) ≤ _
+  change (Q:ℝ)*S*(1+diagonalEnergy Q (lower n)) ≤ _
   apply (mul_le_mul_iff_left₀ hdpos).mp
   calc
     _ ≤ ((Q:ℝ)*S*(4*d))*d := by gcongr
@@ -291,6 +291,45 @@ theorem classEnergy_le_profile (n P : ℕ) (hP : 0<P) (b : ℕ → ℝ) : classE
   exact le_add_of_nonneg_right (sum_nonneg fun _ _ => sq_nonneg _)
 
 /-- The prime-pair input may be proved for the classical untruncated count and any
+periodic profile, with any lower denominator cutoff. -/
+theorem mass_variance_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ → ℝ)
+    (lower : ℕ → ℕ)
+    (hv : ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      let Q := catalogueCutoff n
+      (Q:ℝ)*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n),
+        (goldbachCount (n-k)+goldbachCount (n+k)-b n (k % period n))^2)*
+        (1+diagonalEnergy Q (lower n)) ≤ δ*(n:ℝ)^3) :
+    ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      (catalogueCutoff n:ℝ)*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n), (pairMass n k (high n)-b n (k % period n))^2)*(1+diagonalEnergy (catalogueCutoff n) (lower n))
+        ≤ δ*(n:ℝ)^3 := by
+  intro δ hδ
+  obtain ⟨A,hA⟩ := hv (δ/4) (by positivity)
+  obtain ⟨M,hM⟩ := truncation_variance_negligible (δ/4) (by positivity) lower
+  refine ⟨max 2 (max A M), fun n hn hev => ?_⟩
+  let W := Ioc (primeBandWidth n) (firstBandEnd n)
+  let J := 1 + diagonalEnergy (catalogueCutoff n) (lower n)
+  let Q := (catalogueCutoff n : ℝ)
+  let e (k : ℕ) := goldbachCount (n-k)+goldbachCount (n+k)-b n (k % period n)
+  let E := ∑ k ∈ W, (e k)^2
+  let T := ∑ k ∈ W, (truncationError n k)^2
+  have hJ : 0≤J := by dsimp [J,diagonalEnergy]; positivity
+  have hQ : 0≤Q := by positivity
+  have ec : (∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n), (pairMass n k (high n)-b n (k % period n))^2) ≤ 2*E+2*T := by
+    unfold E T
+    rw [mul_sum,mul_sum,← sum_add_distrib]
+    apply sum_le_sum
+    intro k _
+    have eq : pairMass n k (high n)-b n (k % period n) = e k - truncationError n k := by
+      unfold e truncationError
+      ring
+    rw [eq]
+    nlinarith only [sq_nonneg (e k + truncationError n k)]
+  have he : Q*E*J ≤ (δ/4)*(n:ℝ)^3 := hA n (by omega) hev
+  have ht : Q*T*J ≤ (δ/4)*(n:ℝ)^3 := hM n (by omega)
+  change Q*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n), (pairMass n k (high n)-b n (k % period n))^2)*J ≤ _
+  nlinarith only [mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ec hQ) hJ,he,ht]
+
+/-- The prime-pair input may be proved for the classical untruncated count and any
 admissible periodic profile. -/
 theorem class_variance_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → ℕ → ℝ)
     (hp : ∀ n≥2, 0<period n ∧ period n ≤ logWidth n)
@@ -303,32 +342,10 @@ theorem class_variance_of_goldbach_profile (period : ℕ → ℕ) (b : ℕ → �
       (catalogueCutoff n:ℝ)*classEnergy n (period n)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))
         ≤ δ*(n:ℝ)^3 := by
   intro δ hδ
-  obtain ⟨A,hA⟩ := hv (δ/4) (by positivity)
-  obtain ⟨M,hM⟩ := truncation_variance_negligible (δ/4) (by positivity)
-  refine ⟨max 2 (max A M), fun n hn hev => ?_⟩
-  let W := Ioc (primeBandWidth n) (firstBandEnd n)
-  let J := 1 + diagonalEnergy (catalogueCutoff n) (logWidth n)
-  let Q := (catalogueCutoff n : ℝ)
-  let e (k : ℕ) := goldbachCount (n-k)+goldbachCount (n+k)-b n (k % period n)
-  let E := ∑ k ∈ W, (e k)^2
-  let T := ∑ k ∈ W, (truncationError n k)^2
-  have hJ : 0≤J := by dsimp [J,diagonalEnergy]; positivity
-  have hQ : 0≤Q := by positivity
-  have ec : classEnergy n (period n) ≤ 2*E+2*T := by
-    refine (classEnergy_le_profile n (period n) (hp n (by omega)).1 (b n)).trans ?_
-    unfold E T
-    rw [mul_sum,mul_sum,← sum_add_distrib]
-    apply sum_le_sum
-    intro k _
-    have eq : pairMass n k (high n)-b n (k % period n) = e k - truncationError n k := by
-      unfold e truncationError
-      ring
-    rw [eq]
-    nlinarith only [sq_nonneg (e k + truncationError n k)]
-  have he : Q*E*J ≤ (δ/4)*(n:ℝ)^3 := hA n (by omega) hev
-  have ht : Q*T*J ≤ (δ/4)*(n:ℝ)^3 := hM n (by omega)
-  change Q*classEnergy n (period n)*J ≤ _
-  nlinarith only [mul_le_mul_of_nonneg_right (mul_le_mul_of_nonneg_left ec hQ) hJ,he,ht]
+  obtain ⟨M,hM⟩ := mass_variance_of_goldbach_profile period b logWidth hv δ hδ
+  refine ⟨max 2 M, fun n hn hev => le_trans ?_ (hM n (by omega) hev)⟩
+  apply mul_le_mul_of_nonneg_right _ (by unfold diagonalEnergy; positivity)
+  exact mul_le_mul_of_nonneg_left (classEnergy_le_profile n _ (hp n (by omega)).1 _) (Nat.cast_nonneg _)
 
 /-- The prime-pair input may be proved for the classical untruncated count and any
 admissible periodic profile. -/

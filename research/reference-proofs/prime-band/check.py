@@ -25,7 +25,7 @@ INPUTS = {
 }
 MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes", "FirstBand", "PeriodicMass", "RamanujanEnergy",
            "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
-           "SingularSeriesTransfer")
+           "SingularSeriesTransfer", "ExactFirstBand", "NonresonantBand")
 
 
 def verified_input(commit, name, digest):

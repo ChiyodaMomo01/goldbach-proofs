@@ -197,7 +197,7 @@ theorem denominator_window_cauchy (Q n B K H : ℕ) (u : ℕ→ℝ) :
 noncomputable def classEnergy (n P : ℕ) : ℝ :=
   ∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n), (classDeviation n P k)^2
 
-private theorem cutoff_power_budget (ε : ℝ) (hε : 0<ε) : ∀ᶠ n in atTop,
+theorem cutoff_power_budget (ε : ℝ) (hε : 0<ε) : ∀ᶠ n in atTop,
     (catalogueCutoff n:ℝ)^5 ≤ ε*n := by
   have lim := tendsto_pow_const_div_const_pow_of_one_lt 10 (by norm_num : (1:ℝ)<2)
   filter_upwards [logWidth_tends.eventually (lim.eventually_lt_const (show 0<ε/4 by positivity)),

@@ -158,8 +158,8 @@ open Filter
 open scoped Topology
 
 /-- The growing factorial cutoff absorbs the slowly growing diagonal energy. -/
-theorem factorial_profile_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTop,
-    1+diagonalEnergy (catalogueCutoff n) (logWidth n) ≤ ε*(factorialIndex n:ℝ)^2 := by
+theorem factorial_profile_budget (ε : ℝ) (he : 0<ε) (lower : ℕ → ℕ := logWidth) : ∀ᶠ n : ℕ in atTop,
+    1+diagonalEnergy (catalogueCutoff n) (lower n) ≤ ε*(factorialIndex n:ℝ)^2 := by
   have h1 : Tendsto (fun x : ℝ => 1/x) atTop (𝓝 0) := by
     simpa [one_div] using (tendsto_inv_atTop_zero : Tendsto (fun x : ℝ => x⁻¹) atTop (𝓝 0))
   have h2 : Tendsto (fun x : ℝ => Real.log x/x) atTop (𝓝 0) := Real.isLittleO_log_id_atTop.tendsto_div_nhds_zero
@@ -184,7 +184,7 @@ theorem factorial_profile_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTo
     (show (L:ℝ) ≤ ((j:ℝ)+1)^(j+1) by exact_mod_cast hpow)
   rw [Real.log_pow] at hlog
   push_cast at hlog
-  have hdiag := (diagonalEnergy_le_harmonic (catalogueCutoff n) L).trans (cutoff_harmonic n)
+  have hdiag := (diagonalEnergy_le_harmonic (catalogueCutoff n) (lower n)).trans (cutoff_harmonic n)
   change (1+Real.log ((j:ℝ)+1))/((j:ℝ)+1) < ε/8 at hsmall
   have h := (div_lt_iff₀ (show 0<(j:ℝ)+1 by positivity)).mp hsmall
   have hx := mul_le_mul_of_nonneg_left h.le (show 0≤2*((j:ℝ)+1) by positivity)
@@ -195,8 +195,8 @@ theorem factorial_profile_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTo
 
 /-- Even after the variance normalization, the fourth harmonic power from the
 two incomplete intervals is negligible. -/
-theorem harmonic_edge_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTop,
-    (catalogueCutoff n:ℝ)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))*
+theorem harmonic_edge_budget (ε : ℝ) (he : 0<ε) (lower : ℕ → ℕ := logWidth) : ∀ᶠ n : ℕ in atTop,
+    (catalogueCutoff n:ℝ)*(1+diagonalEnergy (catalogueCutoff n) (lower n))*
       (harmonicCutoff (2*n))^4 ≤ ε*n := by
   have lim := tendsto_pow_const_div_const_pow_of_one_lt 7 (by norm_num : (1:ℝ)<2)
   filter_upwards [logWidth_tends.eventually (lim.eventually_lt_const
@@ -207,8 +207,8 @@ theorem harmonic_edge_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTop,
   have hQ : Q≤L^2 := by
     change ((Nat.log 2 (n+2)^2:ℕ):ℝ) ≤ ((Nat.log 2 (n+2)+1:ℕ):ℝ)^2
     push_cast; nlinarith [Nat.cast_nonneg (α:=ℝ) (Nat.log 2 (n+2))]
-  have hJ := (diagonalEnergy_le_harmonic (catalogueCutoff n) (logWidth n)).trans (cutoff_harmonic n)
-  have hj : 1+diagonalEnergy (catalogueCutoff n) (logWidth n) ≤ 2*L := by
+  have hJ := (diagonalEnergy_le_harmonic (catalogueCutoff n) (lower n)).trans (cutoff_harmonic n)
+  have hj : 1+diagonalEnergy (catalogueCutoff n) (lower n) ≤ 2*L := by
     have hlog := Real.log_le_sub_one_of_pos (show 0<L by linarith)
     dsimp only [L] at *; linarith
   have hh : harmonicCutoff (2*n) ≤ 3*L := by
@@ -233,17 +233,17 @@ theorem harmonic_edge_budget (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTop,
     _ ≤ _ := by dsimp only [L]; nlinarith only [hx,mul_le_mul_of_nonneg_left hexp he.le]
 
 /-- The translation of the factor m to the fixed centre n has smaller order on the band. -/
-theorem diagonal_over_cutoff (ε : ℝ) (he : 0<ε) : ∀ᶠ n : ℕ in atTop,
-    1+diagonalEnergy (catalogueCutoff n) (logWidth n) ≤ ε*(catalogueCutoff n:ℝ) := by
+theorem diagonal_over_cutoff (ε : ℝ) (he : 0<ε) (lower : ℕ → ℕ := logWidth) : ∀ᶠ n : ℕ in atTop,
+    1+diagonalEnergy (catalogueCutoff n) (lower n) ≤ ε*(catalogueCutoff n:ℝ) := by
   have lt := (tendsto_natCast_atTop_atTop.comp logWidth_tends).eventually_ge_atTop (4/ε+1)
   filter_upwards [lt] with n hn
   let d := Nat.log 2 (n+2)
   have hd : 1≤d := Nat.le_log_of_pow_le (by decide : 1<2) (show 2^1≤n+2 by omega)
   have hr : (1:ℝ)≤d := by exact_mod_cast hd
   have hL : (logWidth n:ℝ) = (d:ℝ)+1 := by simp [logWidth,d]
-  have hJ := (diagonalEnergy_le_harmonic (catalogueCutoff n) (logWidth n)).trans (cutoff_harmonic n)
+  have hJ := (diagonalEnergy_le_harmonic (catalogueCutoff n) (lower n)).trans (cutoff_harmonic n)
   rw [hL] at hJ
-  have ha : 1+diagonalEnergy (catalogueCutoff n) (logWidth n) ≤ 4*(d:ℝ) := by
+  have ha : 1+diagonalEnergy (catalogueCutoff n) (lower n) ≤ 4*(d:ℝ) := by
     linarith [Real.log_le_sub_one_of_pos (show 0<(d:ℝ)+1 by positivity)]
   change 4/ε+1 ≤ (logWidth n:ℝ) at hn
   rw [hL] at hn
@@ -258,8 +258,8 @@ classical binary Goldbach mean-square theorem. The normalization is c = 2 C₂. 
 def ClassicalMeanSquare (c : ℝ) : Prop := ∃ A : ℝ, 0≤A ∧ ∀ᶠ X : ℕ in atTop,
     (∑ m ∈ Icc 1 X, (goldbachCount m-c*m*binaryShape m m)^2)*(Real.log X)^4 ≤ A*(X:ℝ)^3
 
-private theorem classical_budget (c : ℝ) (hc : ClassicalMeanSquare c) (ε : ℝ) (he : 0<ε) :
-    ∀ᶠ n : ℕ in atTop, (catalogueCutoff n:ℝ)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))*
+private theorem classical_budget (c : ℝ) (hc : ClassicalMeanSquare c) (ε : ℝ) (he : 0<ε) (lower : ℕ → ℕ := logWidth) :
+    ∀ᶠ n : ℕ in atTop, (catalogueCutoff n:ℝ)*(1+diagonalEnergy (catalogueCutoff n) (lower n))*
       (∑ m ∈ range (2*n+1), (goldbachCount m-c*m*binaryShape m m)^2) ≤ ε*(n:ℝ)^3 := by
   obtain ⟨A,hA0,hA⟩ := hc
   let B := 8*A/(Real.log 2)^4
@@ -267,7 +267,7 @@ private theorem classical_budget (c : ℝ) (hc : ClassicalMeanSquare c) (ε : �
   have hB : 0≤B := by dsimp [B]; positivity
   obtain ⟨M,hM⟩ := eventually_atTop.mp hA
   filter_upwards [eventually_ge_atTop (max 2 M),
-    diagonal_over_cutoff (ε/(B+1)) (by positivity)] with n hn hJ
+    diagonal_over_cutoff (ε/(B+1)) (by positivity) lower] with n hn hJ
   let d := Nat.log 2 (n+2)
   let Q := (catalogueCutoff n:ℝ)
   let G := ∑ m ∈ range (2*n+1), (goldbachCount m-c*m*binaryShape m m)^2
@@ -298,14 +298,19 @@ private theorem classical_budget (c : ℝ) (hc : ClassicalMeanSquare c) (ε : �
     _ ≤ (ε/(B+1))*(B*(n:ℝ)^3) := mul_le_mul_of_nonneg_left hG (by positivity)
     _ ≤ _ := by rw [← mul_assoc]; exact mul_le_mul_of_nonneg_right hfrac (by positivity)
 
-/-- A complete reduction of the first-band prime-pair variance to the classical global
-mean-square theorem, without assuming a distribution estimate for individual residue classes. -/
-theorem variance_of_classical_mean_square (c : ℝ) (hc : ClassicalMeanSquare c) :
-    ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
-      (catalogueCutoff n:ℝ)*classEnergy n (factorialPeriod n)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))
-        ≤ δ*(n:ℝ)^3 := by
-  let b (n r : ℕ) := c*n*(binaryShape (factorialIndex n) (n-r)+binaryShape (factorialIndex n) (n+r))
-  apply class_variance_of_goldbach_profile factorialPeriod b (fun n _ => factorialPeriod_fits n)
+/-- The periodic first-band model, evaluated on an offset residue. -/
+noncomputable def pairedProfile (c : ℝ) (n r : ℕ) : ℝ :=
+  c*n*(binaryShape (factorialIndex n) (n-r)+binaryShape (factorialIndex n) (n+r))
+
+/-- The explicit model approximates the actual mass, even when the energy weight
+includes all denominators starting at one. -/
+theorem profile_variance_of_classical_mean_square (c : ℝ) (hc : ClassicalMeanSquare c)
+    (lower : ℕ → ℕ) : ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      (catalogueCutoff n:ℝ)*(∑ k ∈ Ioc (primeBandWidth n) (firstBandEnd n),
+        (pairMass n k (GoldbachWeight.high n)-pairedProfile c n (k % factorialPeriod n))^2)*
+        (1+diagonalEnergy (catalogueCutoff n) (lower n)) ≤ δ*(n:ℝ)^3 := by
+  let b := pairedProfile c
+  apply mass_variance_of_goldbach_profile factorialPeriod b lower
   intro ε he
   let C := shapeConstant
   let A := C/2+2
@@ -316,13 +321,13 @@ theorem variance_of_classical_mean_square (c : ℝ) (hc : ClassicalMeanSquare c)
   let δ := ε/F
   have hδ : 0<δ := div_pos he hF
   apply eventually_atTop.mp
-  filter_upwards [classical_budget c hc δ hδ, harmonic_edge_budget δ hδ,
-    factorial_profile_budget δ hδ, diagonal_over_cutoff δ hδ,
+  filter_upwards [classical_budget c hc δ hδ lower, harmonic_edge_budget δ hδ lower,
+    factorial_profile_budget δ hδ lower, diagonal_over_cutoff δ hδ lower,
     factorialIndex_tends.eventually (eventually_ge_atTop 2), eventually_ge_atTop 4]
     with n hg hedge hfact hj hy hn
   intro _
   let Q := (catalogueCutoff n:ℝ)
-  let J := 1+diagonalEnergy (catalogueCutoff n) (logWidth n)
+  let J := 1+diagonalEnergy (catalogueCutoff n) (lower n)
   let H := firstBandEnd n
   let K := primeBandWidth n
   let y := factorialIndex n
@@ -390,6 +395,18 @@ theorem variance_of_classical_mean_square (c : ℝ) (hc : ClassicalMeanSquare c)
         mul_le_mul_of_nonneg_left edgeH (show 0≤96*c^2 by positivity),
         mul_le_mul_of_nonneg_left edgeN (show 0≤48*c^2 by positivity)]
     _ = _ := by rw [eq]
+
+/-- A complete reduction of the first-band prime-pair variance to the classical global
+mean-square theorem, without assuming a distribution estimate for individual residue classes. -/
+theorem variance_of_classical_mean_square (c : ℝ) (hc : ClassicalMeanSquare c) :
+    ∀ δ:ℝ, 0<δ → ∃ N:ℕ, ∀ n≥N, Even n →
+      (catalogueCutoff n:ℝ)*classEnergy n (factorialPeriod n)*(1+diagonalEnergy (catalogueCutoff n) (logWidth n))
+        ≤ δ*(n:ℝ)^3 := by
+  intro δ hδ
+  obtain ⟨M,hM⟩ := profile_variance_of_classical_mean_square c hc logWidth δ hδ
+  refine ⟨M, fun n hn hev => le_trans ?_ (hM n hn hev)⟩
+  apply mul_le_mul_of_nonneg_right _ (by unfold diagonalEnergy; positivity)
+  exact mul_le_mul_of_nonneg_left (classEnergy_le_profile n _ (factorialPeriod_fits n).1 _) (Nat.cast_nonneg _)
 
 /-- The first-band centred large-denominator loss is sublinear under the single
 classical mean-square input. -/

@@ -69,10 +69,10 @@ noncomputable def tailPrefix (Q n K t : ℕ) (w : ℕ → ℝ) : ℝ :=
   ∑ k ∈ Ioc K t, tailWave Q n k w
 
 /-- Summation by parts with prefixes starting strictly after K, including the last endpoint. -/
-private theorem harmonic_prefix_identity (a : ℕ → ℝ) (K n : ℕ) :
+theorem weighted_prefix_identity (a w : ℕ → ℝ) (K n : ℕ) :
     let S := fun t => ∑ k ∈ Ioc K t, a k
-    (∑ k ∈ Ioc K n, (k:ℝ)⁻¹ * a k) =
-      (n:ℝ)⁻¹ * S n + ∑ k ∈ Ioo K n, ((k:ℝ)⁻¹ - ((k+1:ℕ):ℝ)⁻¹) * S k := by
+    (∑ k ∈ Ioc K n, w k * a k) =
+      w n * S n + ∑ k ∈ Ioo K n, (w k - w (k+1)) * S k := by
   dsimp only
   by_cases hn : K < n
   · induction n, hn using Nat.le_induction with
@@ -100,7 +100,7 @@ theorem trimmed_prefix_identity (Q n K : ℕ) (w : ℕ → ℝ) :
     trimmedBulk Q n K w = pairMass n 0 w * (1-arcLength Q n) - prefixLoss Q n K w := by
   rw [trimmed_frequency_sum]
   unfold prefixLoss tailPrefix
-  rw [← harmonic_prefix_identity, mul_sum]
+  rw [← weighted_prefix_identity (fun k => tailWave Q n k w) (fun k => (k:ℝ)⁻¹) K n, mul_sum]
   simp only [mul_inv, mul_assoc]
 
 /-- Exact signed prefix criterion; no supremum bound on individual prefixes is assumed. -/

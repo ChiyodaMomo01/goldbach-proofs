@@ -258,6 +258,36 @@ removed. Parity is retained even when the set of odd primes is empty. -/
 noncomputable def binaryShape (y m : ℕ) : ℝ :=
   if 2 ∣ m then oddFactorProduct (oddPrimesTo y) m else 0
 
+/-- Each retained local factor is at most its prime. This crude uniform bound
+also covers residue zero, where every local factor is present. -/
+theorem abs_binaryShape_le_factorial (y m : ℕ) : |binaryShape y m| ≤ y.factorial := by
+  unfold binaryShape oddFactorProduct
+  split_ifs
+  · let S := (oddPrimesTo y).filter (· ∣ m)
+    have prime (p) (hp : p∈S) : 3≤p ∧ p≤y := by
+      obtain ⟨hs,_⟩ := mem_filter.mp hp
+      obtain ⟨hy,hl⟩ := mem_filter.mp hs
+      exact ⟨hl,(Nat.mem_primesLE.mp hy).1⟩
+    have facts (p) (hp : p∈S) : 0≤1+goldbachFactor p ∧ 1+goldbachFactor p≤p := by
+      have hr : (3:ℝ)≤p := by exact_mod_cast (prime p hp).1
+      have hd : 0<(p:ℝ)-2 := by linarith
+      have hu : 1/((p:ℝ)-2)≤1 := (div_le_iff₀ hd).mpr (by linarith)
+      unfold goldbachFactor
+      exact ⟨by positivity,by linarith⟩
+    change |∏ p ∈ S, (1+goldbachFactor p)| ≤ _
+    rw [abs_of_nonneg (prod_nonneg fun p hp => (facts p hp).1)]
+    calc
+      _ ≤ ∏ p ∈ S, (p:ℝ) := prod_le_prod₀ (fun p hp => (facts p hp).1) (fun p hp => (facts p hp).2)
+      _ ≤ ∏ p ∈ Ico 1 (y+1), (p:ℝ) := by
+        apply prod_le_prod_of_subset_of_one_le₀
+        · intro p hp
+          obtain ⟨hl,hu⟩ := prime p hp
+          exact mem_Ico.mpr ⟨by omega,by omega⟩
+        · intro p _; positivity
+        · intro p hp _; exact_mod_cast (mem_Ico.mp hp).1
+      _ = _ := by rw [← Nat.cast_prod,prod_Ico_id_eq_factorial]
+  · simp
+
 /-- Every factor in the cutoff profile only depends on the residue modulo y!. -/
 theorem binaryShape_residue (y m : ℕ) (hy : 2≤y) :
     binaryShape y (m % y.factorial) = binaryShape y m := by
