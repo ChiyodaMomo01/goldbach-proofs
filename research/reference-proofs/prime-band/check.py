@@ -15,6 +15,8 @@ LEAN = ROOT / "lean"
 UPSTREAM = "https://raw.githubusercontent.com/CGandGameEngineLearner/goldbach-proofs"
 EQUIVALENCE_ID = "L-goldbach-bulk-prefix-equivalence"
 GAP_ID = "L-goldbach-bulk-signed-floor"
+MAJOR_FLOOR_ID = "L-goldbach-arc-major-floor"
+MAJOR_FLOOR_SHA = "bf48b018f6adf0e5b9f483b4ff86195417f66788610313aacfbecfb3f6082902"
 STATEMENT_SHA = "5cac9d374fe0214eb2fa65bcc0541c9b2dcf3f5f6ad52c7e9f5af0b41e39d37d"
 # Hashes recorded in the accepted manifests for the disjointness and cutoff-scale lemmas.
 INPUTS = {
@@ -26,7 +28,8 @@ INPUTS = {
 MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes", "FirstBand", "PeriodicMass", "RamanujanEnergy",
            "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
            "SingularSeriesTransfer", "ExactFirstBand", "NonresonantBand", "ResonantMean", "FirstBandSineIntegral",
-           "AveragedBand", "ConductorEuler", "VaughanAlignment", "InfiniteBand")
+           "AveragedBand", "ConductorEuler", "VaughanAlignment", "InfiniteBand",
+           "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity")
 
 
 def verified_input(commit, name, digest):
@@ -73,9 +76,23 @@ def replay(build):
         f"theorem {theorem} : {statements[EQUIVALENCE_ID]} :=\n"
         f"  GoldbachMinor.catalogue_prefix_loss_iff\n#print axioms {theorem}\n"
     )
+    major = statements[MAJOR_FLOOR_ID]
+    if hashlib.sha256(major.encode()).hexdigest() != MAJOR_FLOOR_SHA:
+        raise ValueError("The major-arc floor has changed. Review the weight and rational arcs.")
+    (build / "CatalogueMajorFloor.lean").write_text(
+        "import MajorPositivity\nset_option autoImplicit false\n"
+        "open GoldbachMinor GoldbachWeight\n"
+        f"theorem catalogue_major_floor_of_vaughan (v : VaughanMajorArcEstimate) : {major} := by\n"
+        "  obtain ⟨c,N,hc,h⟩ := full_prime_major_floor v\n"
+        "  refine ⟨c,N,hc,fun n hn he => ?_⟩\n"
+        "  change c*n ≤ (∫ t in (0:ℝ)..1, (catalogueArcs (catalogueCutoff n) n).indicator "
+        "(fun u => (GoldbachWeight.spectrum n primeLog u)^2*phase (-(n:ℝ)*u)) t).re\n"
+        "  simpa only [catalogueMajorValue,mul_comm] using h n hn he\n"
+        "#print axioms catalogue_major_floor_of_vaughan\n"
+    )
     for name in MODULES:
         (build / f"{name}.lean").write_bytes((HERE / f"{name}.lean").read_bytes())
-    names = [*INPUTS, "FrozenBulk", *MODULES, "CatalogueEquivalence"]
+    names = [*INPUTS, "FrozenBulk", *MODULES, "CatalogueEquivalence", "CatalogueMajorFloor"]
     for name in names:
         flags = ["-DwarningAsError=true"] if name not in INPUTS else []
         if name in ("FrozenBulk", "CatalogueEquivalence"):

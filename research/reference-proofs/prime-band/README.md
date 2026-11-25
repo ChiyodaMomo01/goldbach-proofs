@@ -208,6 +208,41 @@ $$
 
 这里的 $0$ 指各个分母下的零余数。级数在这个余数上的各项均为正，分母 $1$ 的一项已给出严格正的下界。该结论说明，要检验逐偶数的下界，必须计入这段贡献。更高频率与真实零频之间的单侧比较仍然开放。（[阶乘子列极限](InfiniteBand.lean)，[正弦积分的正性](FirstBandSineIntegral.lean)）
 
+### From the major arcs to the ordinary Goldbach count
+
+For a positive target integer $n$, write $Q=\lfloor\log_2(n+2)\rfloor^2$. Let $R(n)$ denote the sum of $(\log p)(\log r)$ over ordered prime pairs $(p,r)$ satisfying $p+r=n$. For a denominator $q$, let $c_q(n)$ be the Ramanujan sum, $\mu(q)$ the Möbius function and $\varphi(q)$ Euler's totient. For $z\ge 0$ define
+
+$$
+J(z)=\int_{-z}^{z}\left(\frac{\sin(\pi t)}{\pi t}\right)^2\,dt,
+\qquad
+M(n)=n\sum_{1\le q\le Q}c_q(n)\frac{\mu(q)^2}{\varphi(q)^2}J(Q/q).
+$$
+
+The integrand takes the value $1$ at $t=0$. The argument $Q/q$ comes from the actual half-width $Q/(qn)$ of each arc. Summing its centre phase over the reduced numerators gives $c_q(n)$. The arcs at the endpoints of the unit interval together contribute one complete arc. ([Finite major-arc integral](OuterArcModel.lean))
+
+**External input.** Vaughan's Theorem 5 with exponent $3$ supplies the uniform estimate for the full log-weighted prime exponential sum. The proof below takes that theorem as a hypothesis. It verifies the actual range of denominators and offsets, the removal of primes satisfying $p^3\le n$, and the replacement of the discrete exponential sum by its continuous integral. For all sufficiently large $n$, the complex major-arc integral of the high-prime spectrum differs from $M(n)$ by at most $18n/\log n$. The cutoff beyond which this holds depends on the constants in the external theorem. ([Vaughan, Chapter 7, Theorem 5, p. 69](https://personal.science.psu.edu/rcv4/571s25/Class571-07.pdf#page=69), [Lean statement and estimate](VaughanMajor.lean))
+
+**What remains.** Under that single input, the catalogue's signed minor-arc lower bound for the high-prime spectrum is equivalent to the following assertion. For every $\varepsilon>0$ and every sufficiently large even $n$,
+
+$$
+R(n)\ge M(n)-\varepsilon n.
+$$
+
+On the entire unit circle, integration selects exactly the pairs with $p+r=n$. Restoring the omitted small primes changes this diagonal count by at most $2(\log 4)n^{1/3}\log n$. The pointwise lower bound on $R(n)$ in the display remains open in this argument. ([Diagonal truncation](GoldbachTruncation.lean), [equivalence with the frozen catalogue statement](MajorPairFloor.lean))
+
+### A finite lower bound for every even target
+
+For every even target $n$ and every integer cutoff $Q\ge1$, the finite model sum divided by $n$ is at least $J(1)/2>0$ (with $n>0$ for this normalization). Here is where evenness matters. Separate the primes dividing $n$ from those which do not. Each prime $p$ in the second group is odd and contributes a negative local factor of magnitude $1/(p-1)^2$. The integral weight decreases as the denominator increases. For any fixed subset of the first group, the combined loss from nonempty subsets of the second group is therefore at most one half of the empty-subset contribution. The bound follows from
+
+$$
+\prod_{j=1}^{k}\left(1+\frac{1}{(2j)^2}\right)
+\le \frac{3k+2}{2k+2} \le \frac32 \qquad (k\ge0).
+$$
+
+As a consequence, Vaughan's Theorem 5 implies the catalogue's full-prime major-arc floor with constant $J(1)/4$. The checker takes the major-arc target verbatim from the catalogue and typechecks the implication. If the frozen high-prime minor-arc floor is also assumed, the ordinary Goldbach count becomes strictly positive for every sufficiently large even target. ([Finite positivity, major-arc floor and eventual representation](MajorPositivity.lean), [catalogue type check](check.py))
+
+[Upstream PR #316](https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/316) by DFQDZZ supplies a separate formal proof of the major-arc floor via Siegel–Walfisz and a discrete kernel. Its proof uses a one-third denominator-one bound. The half-mass estimate above applies to the continuous model and its finite cutoffs.
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，为两个既有输入读取已核验的固定版本，随后编译各证明模块。最后一步直接读取目录中 `L-goldbach-bulk-prefix-equivalence` 的完整声明，用等价定理逐字对接该类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）

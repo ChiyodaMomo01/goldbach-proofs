@@ -12,6 +12,15 @@ noncomputable def goldbachCount (m : ℕ) : ℝ :=
 
 def cubeCutoff (n : ℕ) := Nat.findGreatest (fun p => p^3 ≤ n) n
 
+theorem cubeCutoff_le_sqrt (n : ℕ) : (cubeCutoff n:ℝ)≤Real.sqrt n := by
+  have root : (cubeCutoff n)^3≤n :=
+    Nat.findGreatest_spec (P:=fun p=>p^3≤n) (Nat.zero_le _) (by simp)
+  have sq : (cubeCutoff n)^2≤n := by
+    by_cases h : cubeCutoff n=0
+    · simp [h]
+    · exact (Nat.pow_le_pow_right (Nat.pos_of_ne_zero h) (by decide : 2≤3)).trans root
+  exact Real.le_sqrt_of_sq_le (by exact_mod_cast sq)
+
 private def boxCount (n m : ℕ) (w : ℕ → ℝ) : ℝ :=
   ∑ x ∈ (antidiagonal m).filter (fun x => x.1 ≤ n ∧ x.2 ≤ n), w x.1 * w x.2
 
@@ -40,11 +49,11 @@ private theorem mass_split (n k : ℕ) (hk : 0<k) (hkn : k≤n) (w : ℕ → ℝ
   have dis : p+r=n-k → p+r≠n+k := by omega
   by_cases hl : p+r=n-k <;> by_cases hu : p+r=n+k <;> simp_all
 
-private theorem primeLog_nonneg (p : ℕ) : 0≤primeLog p := by
+theorem primeLog_nonneg (p : ℕ) : 0≤primeLog p := by
   unfold primeLog
   split_ifs <;> positivity
 
-private theorem primeLog_sum (t : ℕ) :
+theorem primeLog_sum (t : ℕ) :
     (∑ p ∈ range (t+1), primeLog p) ≤ Real.log 4 * t := by
   refine le_trans ?_ (Chebyshev.theta_le_log4_mul_x (show 0≤(t:ℝ) by positivity))
   rw [Chebyshev.theta_eq_sum_Icc, Nat.floor_natCast, sum_filter]
@@ -128,6 +137,25 @@ private theorem box_error (n m M t : ℕ) (hm : m≤M) (hM : 0<M)
       have bound := small_coordinate m t M hm hM
       change (∑ x ∈ antidiagonal m, if x.1≤t then primeLog x.1*primeLog x.2 else 0) + _ ≤ _
       linarith only [show (∑ x ∈ antidiagonal m, cut x) ≤ _ from bound]
+
+/-- At offset zero there is exactly one target. Removing small coordinates
+costs at most twice their total prime weight times the largest partner weight. -/
+theorem diagonal_truncation (n : ℕ) (hn : 0<n) :
+    0 ≤ goldbachCount n-pairMass n 0 (high n) ∧
+    goldbachCount n-pairMass n 0 (high n) ≤ 2*(Real.log 4*cubeCutoff n*Real.log n) := by
+  have eq : pairMass n 0 (high n)=boxCount n n (high n) := by
+    rw [pairMass,box_rectangle]
+    apply sum_congr rfl
+    intro p _
+    apply sum_congr rfl
+    intro r _
+    have cond : (offset n p r).natAbs=0 ↔ p+r=n := by
+      simp only [Int.natAbs_eq_zero,offset]; omega
+    by_cases e : p+r=n
+    · simp [e,cond.mpr e]
+    · simp [e,cond.not.mpr e]
+  rw [eq]
+  exact box_error n n n (cubeCutoff n) le_rfl hn le_rfl (by simp)
 
 /-- For positive offsets the classical count has two disjoint target sums. Removing either
 endpoint discards only pairs with one coordinate below an explicit threshold. -/
