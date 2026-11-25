@@ -73,5 +73,46 @@ theorem archimedean_mass_le_one (x : ℝ) (hx : 0 ≤ x) : archimedeanMass x ≤
   rw [archimedeanMass, intervalIntegral.integral_of_le (by linarith), ← integral_catalogue_sinc_square]
   exact setIntegral_le_integral density_integrable (ae_of_all _ fun t => sq_nonneg _)
 
+/-- Explicit tail for the continuous catalogue kernel. -/
+theorem archimedean_mass_loss_le {z : ℝ} (hz : 0 < z) : 1 - archimedeanMass z ≤ 2/z := by
+  let f := fun t : ℝ => (Real.sinc (Real.pi*t))^2
+  have fc : Continuous f := by dsimp [f]; fun_prop
+  have oneWing (y : ℝ) (hy : z ≤ y) : (∫ t in z..y, f t) ≤ 1/z := by
+    have nz (t) (ht : t ∈ Set.uIcc z y) : t ≠ 0 :=
+      (hz.trans_le ((Set.uIcc_of_le hy ▸ ht).1)).ne'
+    have cont := continuousOn_id.zpow₀ (-2:ℤ) (fun t ht => Or.inl (nz t ht))
+    apply (intervalIntegral.integral_mono_on hy (fc.intervalIntegrable ..) cont.intervalIntegrable _).trans
+    · simp only [id_eq]
+      rw [integral_zpow (Or.inr ⟨by decide,fun ht => nz _ ht rfl⟩ :
+          (0:ℤ) ≤ -2 ∨ (-2:ℤ) ≠ -1 ∧ (0:ℝ) ∉ Set.uIcc z y)]
+      have yp : 0<y := hz.trans_le hy
+      norm_num [one_div,div_neg]
+      positivity
+    · intro t ht
+      have tp := hz.trans_le ht.1
+      dsimp [f]
+      rw [Real.sinc_of_ne_zero (mul_ne_zero Real.pi_ne_zero tp.ne'), div_pow, mul_pow]
+      norm_num only [zpow_neg, zpow_ofNat]
+      rw [div_le_iff₀ (mul_pos (sq_pos_of_pos Real.pi_pos) (sq_pos_of_pos tp))]
+      calc
+        _ ≤ 1 := Real.sin_sq_le_one _
+        _ ≤ Real.pi^2 := by nlinarith [Real.pi_gt_three]
+        _ = _ := by field_simp
+  have outer (y : ℝ) (hy : z ≤ y) : archimedeanMass y - archimedeanMass z ≤ 2/z := by
+    have right := oneWing y hy
+    have left : (∫ t in -y..-z, f t) = ∫ t in z..y, f t := by
+      rw [← intervalIntegral.integral_comp_neg]
+      simp [f, mul_neg,Real.sinc_neg]
+    have h₁ := intervalIntegral.integral_add_adjacent_intervals
+      (fc.intervalIntegrable (μ:=volume) (-y) (-z)) (fc.intervalIntegrable (-z) z)
+    have h₂ := intervalIntegral.integral_add_adjacent_intervals
+      (fc.intervalIntegrable (μ:=volume) (-y) z) (fc.intervalIntegrable z y)
+    change (∫ t in -y..y, f t) - (∫ t in -z..z, f t) ≤ _
+    rw [show 2/z = 1/z + 1/z by ring]
+    linarith only [left, h₁, h₂, right]
+  exact le_of_tendsto (archimedean_mass_tends_to_one.sub_const (archimedeanMass z))
+    ((eventually_ge_atTop z).mono outer)
+
+#print axioms archimedean_mass_loss_le
 #print axioms archimedean_mass_tends_to_one
 end GoldbachMinor

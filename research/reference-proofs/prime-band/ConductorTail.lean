@@ -54,24 +54,22 @@ private theorem mass_factorization (q : ℕ) (sq : Squarefree q) :
   simp only [conductorMass, div_pow, mu, card, phi, Nat.cast_prod, Nat.cast_ofNat,
     mul_one_div, primeMass, prod_div_distrib, prod_pow]
 
-theorem conductorMass_summable : Summable conductorMass := by
+private theorem summable_squarefree_product (f g : ℕ → ℝ)
+    (hf : ∀ q, 0 ≤ f q) (hg : ∀ p, 0 ≤ g p) (hs : Summable g)
+    (outside : ∀ q, ¬ Squarefree q → f q = 0)
+    (factors : ∀ q, Squarefree q → f q = ∏ p ∈ q.primeFactors, g p) : Summable f := by
   classical
-  have pn (p) : 0 ≤ primeMass p := by unfold primeMass; positivity
-  have ps : Summable primeMass := by
-    apply (summable_nat_add_iff 1).mp
-    simpa [primeMass, div_eq_mul_inv] using
-      (Real.summable_one_div_nat_pow.mpr (by decide : 1 < 2)).mul_left 2
-  let term (A : Finset ℕ) := ∏ p ∈ A, primeMass p
-  have pos (A) : 0 ≤ term A := prod_nonneg fun p _ => pn p
-  have total : Summable term := summable_finsetProd_of_summable_nonneg pn ps
-  apply summable_of_sum_range_le (c := ∑' A, term A) mass_nonneg
+  let term (A : Finset ℕ) := ∏ p ∈ A, g p
+  have pos (A) : 0 ≤ term A := prod_nonneg fun p _ => hg p
+  have total : Summable term := summable_finsetProd_of_summable_nonneg hg hs
+  apply summable_of_sum_range_le (c := ∑' A, term A) hf
   intro N
   let D := (range N).filter Squarefree
-  have restrict : (∑ q ∈ range N, conductorMass q) = ∑ q ∈ D, conductorMass q := by
+  have restrict : (∑ q ∈ range N, f q) = ∑ q ∈ D, f q := by
     rw [sum_filter]
     apply sum_congr rfl
     intro q _
-    by_cases h : Squarefree q <;> simp [h,conductorMass,moebius_eq_zero_of_not_squarefree]
+    by_cases h : Squarefree q <;> simp [h, outside]
   rw [restrict]
   apply le_trans _ (total.sum_le_tsum (D.image Nat.primeFactors) (fun A _ => pos A))
   apply sum_le_sum_of_injOn Nat.primeFactors _ (Subset.rfl) _ (fun A _ _ => pos A)
@@ -79,7 +77,96 @@ theorem conductorMass_summable : Summable conductorMass := by
     rw [← Nat.prod_primeFactors_of_squarefree (mem_filter.mp ha).2,
         ← Nat.prod_primeFactors_of_squarefree (mem_filter.mp hb).2, eq]
   · intro q hq
-    exact (mass_factorization q (mem_filter.mp hq).2).le
+    exact (factors q (mem_filter.mp hq).2).le
+
+theorem conductorMass_summable : Summable conductorMass := by
+  apply summable_squarefree_product conductorMass primeMass mass_nonneg
+    (fun p => by unfold primeMass; positivity) _ _ mass_factorization
+  · apply (summable_nat_add_iff 1).mp
+    simpa [primeMass, div_eq_mul_inv] using
+      (Real.summable_one_div_nat_pow.mpr (by decide : 1 < 2)).mul_left 2
+  · intro q h
+    simp [conductorMass, moebius_eq_zero_of_not_squarefree h]
+
+/-- The square-root moment of the absolute conductor majorant is finite. -/
+theorem conductorMass_sqrt_summable :
+    Summable (fun q : ℕ => Real.sqrt q * conductorMass q) := by
+  let g := fun p : ℕ => Real.sqrt p * primeMass p
+  apply summable_squarefree_product _ g (fun q => mul_nonneg (Real.sqrt_nonneg _) (mass_nonneg _))
+    (fun p => by dsimp [g, primeMass]; positivity)
+  · apply ((Real.summable_nat_rpow.mpr (show (-3/2:ℝ) < -1 by norm_num)).mul_left 8).of_norm_bounded_eventually
+    rw [Nat.cofinite_eq_atTop]
+    filter_upwards [eventually_ge_atTop 2] with p hp
+    have rp : (0:ℝ) < p := by exact_mod_cast (show 0<p by omega)
+    have pred : ((p-1:ℕ):ℝ) = (p:ℝ)-1 := by rw [Nat.cast_sub (by omega : 1≤p)]; norm_num
+    have two : (2:ℝ) ≤ p := by exact_mod_cast hp
+    have fac : (p:ℝ)^2 ≤ 4*((p:ℝ)-1)^2 := by
+      have h := sq_le_sq' (by linarith : -(2*((p:ℝ)-1)) ≤ p) (by linarith : (p:ℝ) ≤ 2*(p-1))
+      nlinarith only [h]
+    have powid : (p:ℝ)^(-3/2:ℝ) = Real.sqrt p / (p:ℝ)^2 := by
+      rw [Real.sqrt_eq_rpow, ← Real.rpow_natCast (p:ℝ) 2, ← Real.rpow_sub rp]
+      norm_num
+    rw [Real.norm_eq_abs, abs_of_nonneg (by dsimp [g,primeMass]; positivity : 0 ≤ g p)]
+    dsimp only [g,primeMass]
+    rw [pred,powid, ← mul_div_assoc, ← mul_div_assoc]
+    rw [div_le_div_iff₀ (sq_pos_of_pos (by linarith : 0 < (p:ℝ)-1)) (sq_pos_of_pos rp)]
+    nlinarith only [mul_le_mul_of_nonneg_left fac (Real.sqrt_nonneg (p:ℝ))]
+  · intro q h
+    simp [conductorMass, moebius_eq_zero_of_not_squarefree h]
+  · intro q hq
+    have prodId : (q:ℝ) = ∏ p ∈ q.primeFactors, (p:ℝ) := by
+      rw [← Nat.cast_prod, Nat.prod_primeFactors_of_squarefree hq]
+    rw [mass_factorization q hq, prodId, Real.sqrt_prod _ (fun _ _ => Nat.cast_nonneg _), ← prod_mul_distrib]
+
+/-- A fixed finite constant for the absolute denominator tail on every window. -/
+noncomputable def conductorSqrtMoment : ℝ := ∑' q : ℕ, Real.sqrt q * conductorMass q
+
+/-- Sum a bounded cutoff error that also grows at most linearly with q/Q. -/
+theorem conductor_cutoff_rate (Q : ℕ) (hQ : 0 < Q) (A : ℝ) (hA : 0 ≤ A)
+    (f : ℕ → ℝ) (hf : ∀ q, 0 ≤ f q) (cap : ∀ q, 0 < q → f q ≤ A)
+    (slope : ∀ q, 0 < q → f q * Q ≤ A * q) :
+    (∑' q, conductorMass q * f q) ≤ A * conductorSqrtMoment / Real.sqrt Q := by
+  have Qp : (0:ℝ) < Q := by exact_mod_cast hQ
+  have root := Real.sqrt_pos.mpr Qp
+  let g := fun q : ℕ => (A/Real.sqrt Q) * (Real.sqrt q * conductorMass q)
+  have sg : Summable g := conductorMass_sqrt_summable.mul_left _
+  have le (q : ℕ) : conductorMass q * f q ≤ g q := by
+    rcases Nat.eq_zero_or_pos q with rfl|hq
+    · simp [g,conductorMass]
+    have mono : f q * Real.sqrt Q ≤ A * Real.sqrt q := by
+      by_cases h : q ≤ Q
+      · have order := Real.sqrt_le_sqrt (show (q:ℝ) ≤ Q by exact_mod_cast h)
+        apply le_of_mul_le_mul_right (a:=Real.sqrt Q) _ root
+        calc
+          _ = f q * Q := by rw [mul_assoc,Real.mul_self_sqrt Qp.le]
+          _ ≤ A * q := slope q hq
+          _ = A * Real.sqrt q * Real.sqrt q := by rw [mul_assoc,Real.mul_self_sqrt (Nat.cast_nonneg _)]
+          _ ≤ _ := mul_le_mul_of_nonneg_left order (mul_nonneg hA (Real.sqrt_nonneg _))
+      · exact (mul_le_mul_of_nonneg_right (cap q hq) root.le).trans
+          (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast (Nat.le_of_not_ge h))) hA)
+    have row := mul_le_mul_of_nonneg_left ((le_div_iff₀ root).mpr mono) (mass_nonneg q)
+    exact row.trans_eq (by dsimp [g]; ring)
+  apply ((sg.of_nonneg_of_le (fun q => mul_nonneg (mass_nonneg q) (hf q)) le).tsum_le_tsum le sg).trans_eq
+  dsimp only [g,conductorSqrtMoment]
+  rw [tsum_mul_left]
+  ring
+
+theorem conductor_tail_rate (K : ℕ) :
+    (∑' r : ℕ, conductorMass (r+(K+1))) ≤ conductorSqrtMoment / Real.sqrt (K+1:ℕ) := by
+  let w := fun q : ℕ => Real.sqrt q * conductorMass q
+  let shift := fun r : ℕ => r+(K+1)
+  have hs : Summable (w ∘ shift) := (summable_nat_add_iff (K+1)).mpr conductorMass_sqrt_summable
+  have tail := (summable_nat_add_iff (K+1)).mpr conductorMass_summable
+  rw [le_div_iff₀ (Real.sqrt_pos.mpr (by exact_mod_cast Nat.succ_pos K)), ← tsum_mul_right]
+  apply (tail.mul_right _).tsum_le_tsum _ hs |>.trans
+    (tsum_comp_le_tsum_of_inj conductorMass_sqrt_summable
+      (fun q => mul_nonneg (Real.sqrt_nonneg _) (mass_nonneg q))
+      (show Function.Injective shift from fun a b eq => Nat.add_right_cancel eq))
+  intro r
+  change conductorMass (shift r)*_ ≤ Real.sqrt (shift r)*conductorMass (shift r)
+  rw [mul_comm]
+  exact mul_le_mul_of_nonneg_right (Real.sqrt_le_sqrt (by exact_mod_cast (Nat.le_add_left (K+1) r)))
+    (mass_nonneg _)
 
 #print axioms conductorMass_summable
 
@@ -192,5 +279,14 @@ theorem uniform_catalogue_conductor_tail (d : ℕ) (hd : 0 < d) (ε : ℝ) (he :
   intro j hj
   exact (dyadic_conductor_tail d j K hd hj).trans_lt hK
 
+/-- Quantitative tail for the catalogue model, uniform in the window index. -/
+theorem dyadic_conductor_tail_rate (d j K : ℕ) (hd : 0 < d) (hj : 0 < j) :
+    dyadicRatio d (fun n => |catalogueConductorTail K n|) j ≤
+      4*d*conductorSqrtMoment / Real.sqrt (K+1:ℕ) := by
+  exact (dyadic_conductor_tail d j K hd hj).trans
+    ((mul_le_mul_of_nonneg_left (conductor_tail_rate K) (by positivity : (0:ℝ) ≤ 4*d)).trans_eq
+      (by ring))
+
+#print axioms dyadic_conductor_tail_rate
 #print axioms uniform_catalogue_conductor_tail
 end GoldbachMinor

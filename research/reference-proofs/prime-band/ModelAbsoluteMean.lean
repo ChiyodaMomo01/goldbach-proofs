@@ -87,6 +87,33 @@ private theorem window_error (d j : ℕ) (hd : 0 < d) (hj : 0 < j) :
       simp only [b,rowMajorant, ← sum_mul, mul_div_right_comm]
       exact mul_le_mul_of_nonneg_right (dyadic_ramWeight_bound d j q hd hj) (lost_range ..).1
 
+/-- A square-root saving in the moving catalogue denominator cutoff. -/
+theorem dyadic_catalogue_model_rate (d j : ℕ) (hd : 0 < d) (hj : 0 < j)
+    (hQ : 0 < catalogueCutoff (d*j)) :
+    dyadicRatio d (fun n => |catalogueMajorModel n-2*twinPrimeConstant*n*binaryShape n n|) j ≤
+      8*d*conductorSqrtMoment / Real.sqrt (catalogueCutoff (d*j)) := by
+  let Q := catalogueCutoff (d*j)
+  have pos : (0:ℝ) < Q := by exact_mod_cast hQ
+  have slope (q : ℕ) (hp : 0 < q) : lostMass (d*j) q * Q ≤ 2*(q:ℝ) := by
+    have rp : (0:ℝ) < q := by exact_mod_cast hp
+    by_cases inside : q ≤ Q
+    · have bound := archimedean_mass_loss_le (div_pos pos rp)
+      have ratio : (2:ℝ)/((Q:ℝ)/q) = (2*q)/Q := by field_simp
+      rw [ratio] at bound
+      simpa only [lostMass,windowKernel,show catalogueCutoff (d*j) = Q from rfl,inside,ite_true]
+        using (le_div_iff₀ pos).mp bound
+    · have order : (Q:ℝ) ≤ q := by exact_mod_cast (Nat.le_of_not_ge inside)
+      simp only [lostMass,windowKernel,show catalogueCutoff (d*j) = Q from rfl,inside,ite_false,sub_zero,one_mul]
+      linarith
+  have loss := conductor_cutoff_rate Q hQ 2 (by norm_num) (lostMass (d*j))
+    (fun q => (lost_range ..).1) (fun q _ => (lost_range (d*j) q).2.trans (by norm_num)) slope
+  apply (window_error d j hd hj).trans
+  simp only [columnMajorant,mul_assoc,tsum_mul_left]
+  dsimp only [Q] at loss
+  convert! (mul_le_mul_of_nonneg_left loss (by positivity : 0 ≤ 4*(d:ℝ))) using 1 <;> ring
+
+#print axioms dyadic_catalogue_model_rate
+
 /-- The finite major-arc model agrees in weighted mean absolute error with
 the complete singular-series main term on every fixed progression of multiples. -/
 theorem dyadic_model_absolute_classical (d : ℕ) (hd : 0 < d) :

@@ -106,47 +106,62 @@ private theorem wide_grows : Tendsto wideCutoff atTop atTop := by
   exact (Nat.le_log_of_pow_le (by decide : 1<2) (by omega : 2^k ≤ n+2)).trans
     (Nat.le_self_pow (by decide : 20≠0) _)
 
+/-- Quantitative estimate with a common cutoff Q for all frequencies in the window. -/
+theorem dyadic_common_model_rate (d j Q : ℕ) (hd : 0 < d) (hj : 0 < j)
+    (hQ : 0 < Q) (sep : 2*Q^2 < 2*d*j) :
+    dyadicRatio d (fun n => |(commonArcModel Q (2*d*j) n).re -
+      2*twinPrimeConstant*n*binaryShape n n|) j ≤
+      24*d*conductorSqrtMoment / Real.sqrt Q := by
+  let X := 2*d*j
+  let col := fun q : ℕ => (4*d*conductorMass q)*errorFactor Q q
+  have pos (q : ℕ) : 0 ≤ 4*(d:ℝ)*conductorMass q := by unfold conductorMass; positivity
+  have cols : Summable col :=
+    ((conductorMass_summable.mul_left (4*(d:ℝ))).mul_right 4).of_nonneg_of_le
+      (fun q => mul_nonneg (pos q) (error_bounds ..).1)
+      (fun q => mul_le_mul_of_nonneg_left (error_bounds Q q).2 (pos q))
+  have rate := conductor_cutoff_rate Q hQ 6 (by norm_num) (errorFactor Q)
+    (fun q => (error_bounds ..).1) (fun q _ => (error_bounds Q q).2.trans (by norm_num)) (by
+      intro q hq
+      have h := (le_div_iff₀ (by exact_mod_cast hQ : (0:ℝ)<Q)).mp
+        (min_le_right (4:ℝ) ((4*q+2:ℝ)/Q))
+      have one : (1:ℝ) ≤ q := by exact_mod_cast hq
+      exact h.trans (by linarith))
+  apply le_trans (b:=∑' q, col q) _ ?_
+  · let T := Ico j (2*j)
+    let W := ∑ i ∈ T, (d:ℝ)*i
+    let b (i q : ℕ) := localError Q (d*i) q
+    have low (i) (hi : i∈T) : 0<d*i := Nat.mul_pos hd (hj.trans_le (mem_Ico.mp hi).1)
+    have sb (i) (hi : i∈T) : Summable (b i) := local_summable _ _ (low i hi)
+    have sc := (summable_sum (s:=T) sb).div_const W
+    have row (i) (hi : i∈T) := anchored_error Q X (d*i) hQ sep
+      ((Nat.mul_le_mul_left d (mem_Ico.mp hi).2.le).trans_eq (by dsimp [X]; ring))
+      ((show X = 2*(d*j) by dsimp [X]; ring).le.trans (Nat.mul_le_mul_left 2 (Nat.mul_le_mul_left d (mem_Ico.mp hi).1)))
+    calc
+      _ ≤ (∑ i ∈ T, ∑' q, b i q)/W := div_le_div_of_nonneg_right (sum_le_sum row) (sum_nonneg fun _ _ => by positivity)
+      _ = ∑' q, (∑ i ∈ T, b i q)/W := by rw [tsum_div_const,Summable.tsum_finsetSum sb]
+      _ ≤ _ := by
+        apply sc.tsum_le_tsum _ cols
+        intro q
+        simp only [b,localError, ← sum_mul,mul_div_right_comm]
+        exact mul_le_mul_of_nonneg_right (dyadic_ramWeight_bound d j q hd hj) (error_bounds ..).1
+  · simp only [col,mul_assoc,tsum_mul_left]
+    convert! (mul_le_mul_of_nonneg_left rate (by positivity : 0 ≤ 4*(d:ℝ))) using 1 <;> ring
+
 theorem dyadic_common_model_mean (d : ℕ) (hd : 0<d) :
     Tendsto (fun j => dyadicRatio d (fun n => |(commonArcModel (wideCutoff (2*d*j)) (2*d*j) n).re -
       2*twinPrimeConstant*n*binaryShape n n|) j) atTop (𝓝 0) := by
-  let X (j : ℕ) := 2*d*j
-  let Q (j : ℕ) := wideCutoff (X j)
-  have grow : Tendsto X atTop atTop := tendsto_atTop_mono (fun j => Nat.le_mul_of_pos_left j (by omega : 0<2*d)) tendsto_id
+  have grow : Tendsto (fun j : ℕ => 2*d*j) atTop atTop := tendsto_atTop_mono
+    (fun j => Nat.le_mul_of_pos_left j (by omega : 0<2*d)) tendsto_id
   have cap := wide_grows.comp grow
-  have limQ : Tendsto (fun j => (Q j:ℝ)) atTop atTop := tendsto_natCast_atTop_atTop.comp cap
-  let col (j q : ℕ) := (4*d*conductorMass q)*errorFactor (Q j) q
-  have mass (q : ℕ) : 0≤conductorMass q := by unfold conductorMass; positivity
-  have c0 (j q) : 0≤col j q := mul_nonneg (by have := mass q; positivity) (error_bounds ..).1
-  have cb (j q) : col j q ≤ (4*d*conductorMass q)*4 :=
-    mul_le_mul_of_nonneg_left (error_bounds ..).2 (by have := mass q; positivity)
-  have envelope := (conductorMass_summable.mul_left (4*(d:ℝ))).mul_right 4
-  have cols (j) := envelope.of_nonneg_of_le (c0 j) (cb j)
-  have single (q) : Tendsto (fun j => col j q) atTop (𝓝 0) := by
-    have f : Tendsto (fun j => errorFactor (Q j) q) atTop (𝓝 0) := squeeze_zero
-      (fun _ => (error_bounds ..).1) (fun _ => min_le_right ..) (tendsto_const_nhds.div_atTop limQ)
-    simpa only [mul_zero] using f.const_mul (4*d*conductorMass q)
-  have total := tendsto_tsum_of_dominated_convergence envelope single (Eventually.of_forall fun j q => by
-    rw [Real.norm_eq_abs,abs_of_nonneg (c0 j q)]; exact cb j q)
+  have root := Real.tendsto_sqrt_atTop.comp (tendsto_natCast_atTop_atTop.comp cap)
+  have lim : Tendsto (fun j : ℕ => 24*d*conductorSqrtMoment / Real.sqrt (wideCutoff (2*d*j))) atTop (𝓝 0) :=
+    tendsto_const_nhds.div_atTop root
   apply squeeze_zero' (Eventually.of_forall fun j => div_nonneg (sum_nonneg fun _ _ => abs_nonneg _)
-    (sum_nonneg fun _ _ => by positivity)) _ (by simpa only [tsum_zero] using total)
-  filter_upwards [grow.eventually wide_scale,cap.eventually_ge_atTop 1,eventually_ge_atTop 1] with j sep qpos jp
-  let T := Ico j (2*j)
-  let W := ∑ i ∈ T, (d:ℝ)*i
-  let b (i q : ℕ) := localError (Q j) (d*i) q
-  have low (i) (hi : i∈T) : 0<d*i := Nat.mul_pos hd (jp.trans (mem_Ico.mp hi).1)
-  have sb (i) (hi : i∈T) : Summable (b i) := local_summable _ _ (low i hi)
-  have sc := (summable_sum (s:=T) sb).div_const W
-  have row (i) (hi : i∈T) := anchored_error (Q j) (X j) (d*i) qpos sep
-    ((Nat.mul_le_mul_left d (mem_Ico.mp hi).2.le).trans_eq (by dsimp [X]; ring))
-    ((show X j = 2*(d*j) by dsimp [X]; ring).le.trans (Nat.mul_le_mul_left 2 (Nat.mul_le_mul_left d (mem_Ico.mp hi).1)))
-  calc
-    _ ≤ (∑ i ∈ T, ∑' q, b i q)/W := div_le_div_of_nonneg_right (sum_le_sum row) (sum_nonneg fun _ _ => by positivity)
-    _ = ∑' q, (∑ i ∈ T, b i q)/W := by rw [tsum_div_const,Summable.tsum_finsetSum sb]
-    _ ≤ _ := by
-      apply sc.tsum_le_tsum _ (cols j)
-      intro q
-      simp only [b,localError, ← sum_mul,mul_div_right_comm]
-      exact mul_le_mul_of_nonneg_right (dyadic_ramWeight_bound d j q hd jp) (error_bounds ..).1
+    (sum_nonneg fun _ _ => by positivity)) _ lim
+  filter_upwards [grow.eventually wide_scale,cap.eventually_ge_atTop 1,eventually_ge_atTop 1]
+    with j sep hQ hj
+  exact dyadic_common_model_rate d j _ hd hj hQ sep
 
+#print axioms dyadic_common_model_rate
 #print axioms dyadic_common_model_mean
 end GoldbachMinor

@@ -388,6 +388,21 @@ $$
 
 Indeed, a target in $F$ outside $B$ must have a common minor-arc coefficient of magnitude at least $\varepsilon X/8$. Summing its squared magnitude over these targets and applying the common-spectrum energy estimate gives the displayed term. A quantitative upper bound for $\#B$ would therefore transfer directly to the original exceptional set. ([Exact theorem and constants](WideExceptionalCount.lean))
 
+### An unconditional rate for the original exceptional set
+
+Fix $\varepsilon>0$. For an integer $j\ge1$, let $F_j$ consist of the even integers $j\le n<2j$ whose original high-prime minor-arc real part is strictly below $-\varepsilon n$. Write $L_j=\lfloor\log_2(j+2)\rfloor$, and let $C=\sum_{q\ge1}\sqrt{q}\,\tau(q)\mu(q)^2/\varphi(q)^2$, where $\tau$ counts positive divisors, $\mu$ is the Möbius function, and $\varphi$ is Euler's totient. For all sufficiently large $j$ (depending on $\varepsilon$),
+
+$$
+\#F_j \le \frac{256 Cj}{\varepsilon L_j}
+             + \frac{256j}{\varepsilon^2 (\log(2j))^2}.
+$$
+
+For the catalogue window $n=2i$ with $j\le i<2j$, apply the count at lower endpoint $2j$ and divide by $j$. The exceptional fraction is at most $512C/(\varepsilon L_{2j})+512/(\varepsilon^2(\log(4j))^2)$. The checker also verifies this indexed statement directly.
+
+The constant $C$ is finite. The Euler product for the square-root moment has prime increments $2\sqrt p/(p-1)^2$, bounded by $8p^{-3/2}$ for $p\ge2$. The catalogue's sinc-square kernel loses at most $2/z$ outside radius $z>0$. These estimates give a weighted mean absolute error of at most $8dC/\sqrt{Q}$ for the catalogue model on the multiples of $d$, with $Q$ evaluated at the lower endpoint. The common wide-arc model contributes at most $24dC/\sqrt{Q}$ with its own cutoff. Counting a one-sided discrepancy of size at least $\varepsilon n/4$ on the even targets, then applying the wide-minor count, gives the display. The logarithm in the second term is natural. The threshold is existential and the bound still allows infinitely many exceptional even integers. ([Conductor moment and tail](ConductorTail.lean), [integral kernel tail](ArcMassNormalization.lean), [catalogue model](ModelAbsoluteMean.lean), [common model](CommonModelMean.lean), [exceptional count](QuantitativeExceptionalCount.lean))
+
+**Size of the constant.** A separate [integer-arithmetic calculation](conductor_moment.py) gives $14.8<C<15$. Unique factorization identifies the moment with the product over primes of $1+2\sqrt p/(p-1)^2$. For a sieve endpoint $Y>1$, the sum of the omitted increments is at most $t=4/((1-1/Y)^2\sqrt{Y})$, by comparing the sum of $m^{-3/2}$ over integers $m>Y$ with its integral. When $t<1$, the omitted product lies between $1$ and $1/(1-t)$ by expansion of the geometric series. The script uses $Y=10^6$, integer square roots and outward rounding for every factor. Run `python3 research/reference-proofs/prime-band/conductor_moment.py` to reproduce the rational endpoints. The Lean theorem above uses the exact moment $C$.
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序核对固定版本的弧不交引理、截断尺度引理以及 PR #316、#1667 的源码摘要，随后编译各证明模块。它还从目录逐字读取前缀等价式、主弧下界、计数等价式和有符号下界的例外密度命题，检查证明是否具有相应的类型，最后用 Lean 内核重检所有模块。（[复核程序](check.py)）
