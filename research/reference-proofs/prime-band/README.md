@@ -257,6 +257,34 @@ To see why, let $P$ be any set of primes dividing an even target $n$ with each p
 
 The certified major-arc approximation transfers the factorial limit to the real part of the high-prime major-arc integral divided by the target. For the ordered log-weighted **prime-pair count**, the same limit follows **if the frozen signed minor-arc floor holds**. A lower bound of the form $R(n)\ge c n$ for a fixed constant $c$ alone would leave a growing gap to the required model bound on factorials. ([Integral and conditional count theorems](MajorModelGrowth.lean))
 
+### The actual pair count on multiples of a fixed modulus
+
+Fix an integer $q\ge1$. Write $\varphi(q)$ for Euler's totient and $S_q(X)$ for the sum of $R(n)$ over nonnegative multiples of $q$ strictly below the integer $X$. Then
+
+$$
+\lim_{X\to\infty}\frac{S_q(X)}{X^2}=\frac{1}{2\varphi(q)}.
+$$
+
+The ordered-pair convention matters here. For each first prime $p<X$, the partner lies below $X-p$ in residue class $-p\pmod q$. Summing its log-weight over that prefix counts every ordered pair exactly once. Suppose all residue-class prefix masses up to $X$ differ from their main terms by at most $E$, where the main term for a prefix of length $m$ is $m/\varphi(q)$ in a reduced class and zero otherwise. The resulting error in $S_q(X)$ from $X(X+1)/(2\varphi(q))$ is at most $(1+\log 4)XE$. The fixed-modulus estimate from the pinned prime-progression theorem gives $E=o(X)$. No minor-arc hypothesis is needed. ([Finite identity, error estimate and asymptotic](ProgressionMean.lean), [prime-progression input from PR #316](https://github.com/DFQDZZ/goldbach-proofs/blob/e4ab24712555ae8c2c926adf19d368a9fb392c35/lean/PEqualNP/Outside/L_goldbach_arc_major_floor.lean#L4241))
+
+For positive integers $j$, the corresponding weighted mean on $qj\le n<2qj$ tends to $q/\varphi(q)$. Its numerator sums $R(n)$, and its denominator sums the same multiples $n$. This leaves open the error at any particular target, including $n=j!$. ([Dyadic mean](ProgressionMean.lean))
+
+The numerical comparison uses the window $X/2<n\le X$ and the same denominator for the actual count and the catalogue model. Each reported window is recomputed two ways. For $R$, the second method sums the complementary prime prefixes directly. For $M$, it groups progression targets by their residue modulo each squarefree denominator and evaluates the Ramanujan sum by the gcd formula. Numerical quadrature separately checks the normalization of the integral weight. ([Reproduction script](progression_means.py))
+
+| Upper endpoint $X$ | Modulus $q$ | Targets | $\sum R/\sum n$ | $\sum M/\sum n$ | Difference |
+| ---: | ---: | ---: | ---: | ---: | ---: |
+| 16,384 | 720 | 11 | 3.69968244 | 3.76974860 | −0.07006616 |
+| 131,072 | 720 | 91 | 3.71714161 | 3.74336493 | −0.02622332 |
+| 1,048,576 | 720 | 728 | 3.74064648 | 3.74545764 | −0.00481116 |
+| 4,194,304 | 720 | 2,913 | 3.74517663 | 3.74611516 | −0.00093854 |
+| 4,194,304 | 5,040 | 416 | 4.36845870 | 4.36617883 | +0.00227988 |
+
+With NumPy and SciPy installed, run the following from the repository root to reproduce the table and the other moduli at the same scales.
+
+```sh
+python3 research/reference-proofs/prime-band/progression_means.py --powers 14 17 20 22 --moduli 2 6 24 120 720 5040
+```
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）

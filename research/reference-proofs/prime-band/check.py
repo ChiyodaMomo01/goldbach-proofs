@@ -31,7 +31,7 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
            "SingularSeriesTransfer", "ExactFirstBand", "NonresonantBand", "ResonantMean", "FirstBandSineIntegral",
            "AveragedBand", "ConductorEuler", "VaughanAlignment", "InfiniteBand",
-           "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput", "MajorModelGrowth")
+           "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput", "MajorModelGrowth", "ProgressionMean")
 
 
 def verified_input(commit, name, digest):
