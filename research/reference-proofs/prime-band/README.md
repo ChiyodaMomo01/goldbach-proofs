@@ -249,6 +249,14 @@ The proof of the count equivalence also runs using the checked source from DFQDZ
 
 Consequently the equivalence between the frozen high-prime floor and $M(n)\le R(n)+\varepsilon n$ has **no external analytic hypothesis**. The high-prime floor alone then implies a two-prime representation for every sufficiently large even integer. Whether the high-prime floor itself holds remains open here. The earlier formulation using Vaughan's Theorem 5 is an alternative proof with an explicit literature input. ([Bridge from the pinned prime-sum estimates](DeskPrimeInput.lean), [finite lower bound](MajorPositivity.lean))
 
+### Growth on multiples of a fixed factorial
+
+Let $B$ be any real number. There are integers $k\ge2$ and $N\ge1$ such that every multiple $n$ of $k!$ with $n\ge N$ satisfies $M(n)/n\ge B$. In particular, $M(j!)/j!$ tends to infinity as the integer $j$ grows. This conclusion uses the actual cutoff and integration widths of the catalogue model. ([Factorial and progression theorems](MajorModelGrowth.lean))
+
+To see why, let $P$ be any set of primes dividing an even target $n$ with each prime at most the cutoff $Q$. The finite lower bound above retains the empty set of prime divisors. Retaining the one-element sets $\{p\}$ for $p\in P$ instead gives a lower bound of $(J(1)/2)\sum_{p\in P}1/p$ for the normalized model at cutoff $Q$. Each such set retains at least half its contribution after accounting for the primes that do not divide $n$. The prime reciprocal sum diverges, so one can choose $P$ large enough to reach $B$ and then choose $k$ at least as large as every prime in $P$. Once the cutoff reaches $k$, the estimate applies to every multiple of $k!$. ([Finite bound for selected prime divisors](MajorPositivity.lean), [Mathlib proof of divergence](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/NumberTheory/SumPrimeReciprocals.lean#L101-L104))
+
+The certified major-arc approximation transfers the factorial limit to the real part of the high-prime major-arc integral divided by the target. For the ordered log-weighted **prime-pair count**, the same limit follows **if the frozen signed minor-arc floor holds**. A lower bound of the form $R(n)\ge c n$ for a fixed constant $c$ alone would leave a growing gap to the required model bound on factorials. ([Integral and conditional count theorems](MajorModelGrowth.lean))
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）

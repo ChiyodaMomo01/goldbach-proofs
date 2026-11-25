@@ -232,10 +232,11 @@ private theorem kernel_decreases (Q a b : ℕ) (ha : 0<a) (h : a≤b) :
   · rw [windowKernel,ite_eq_right hb]
     exact kernel_nonneg Q a
 
-/-- Every even target retains at least half the denominator-one mass, for
-every integer cutoff, before sending the target or cutoff to infinity. -/
-theorem even_major_kernel_floor (n Q : ℕ) (even : Even n) (hq : 1≤Q) :
-    archimedeanMass 1/2 ≤ ∑ q ∈ Icc 1 Q, ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2*
+/-- Retain every subset of the prime divisors before discarding the signed losses. -/
+private theorem even_divisor_support_floor (n Q : ℕ) (even : Even n) :
+    (∑ R ∈ ((Nat.primesLE Q).filter (· ∣ n)).powerset,
+      (∏ p ∈ R, localSign n p) * windowKernel Q (supportProduct R) / 2) ≤
+    ∑ q ∈ Icc 1 Q, ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2*
       archimedeanMass ((Q:ℝ)/q) := by
   let S := Nat.primesLE Q
   let G := S.filter (· ∣ n)
@@ -284,7 +285,28 @@ theorem even_major_kernel_floor (n Q : ℕ) (even : Even n) (hq : 1≤Q) :
   rw [model_support_sum]
   change _ ≤ ∑ A ∈ S.powerset, (∏ p ∈ A,localSign n p)*windowKernel Q (supportProduct A)
   rw [← un,split_support G B dis]
-  apply le_trans _ (sum_le_sum grouped)
+  exact sum_le_sum grouped
+
+private theorem divisor_support_nonneg {n Q : ℕ} (R : Finset ℕ)
+    (hr : R ∈ ((Nat.primesLE Q).filter (· ∣ n)).powerset) :
+    0 ≤ (∏ p ∈ R, localSign n p) * windowKernel Q (supportProduct R) / 2 := by
+  apply div_nonneg _ (by norm_num)
+  apply mul_nonneg _ (kernel_nonneg ..)
+  apply prod_nonneg
+  intro p hp
+  obtain ⟨pr, hd⟩ := mem_filter.mp (mem_powerset.mp hr hp)
+  have h : (1:ℝ) ≤ p := by exact_mod_cast (Nat.prime_of_mem_primesLE pr).pos
+  rw [localSign, ite_eq_left hd]
+  positivity
+
+/-- Every even target retains at least half the denominator-one mass, for
+every integer cutoff, before sending the target or cutoff to infinity. -/
+theorem even_major_kernel_floor (n Q : ℕ) (even : Even n) (hq : 1≤Q) :
+    archimedeanMass 1/2 ≤ ∑ q ∈ Icc 1 Q, ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2*
+      archimedeanMass ((Q:ℝ)/q) := by
+  let G := (Nat.primesLE Q).filter (· ∣ n)
+  let g (R : Finset ℕ) := ∏ p ∈ R, localSign n p
+  apply le_trans _ (even_divisor_support_floor n Q even)
   have emp : ∅∈G.powerset := mem_powerset.mpr (empty_subset _)
   have one : archimedeanMass 1≤windowKernel Q (supportProduct ∅) := by
     simp only [supportProduct,prod_empty,windowKernel,hq,ite_true,Nat.cast_one,div_one]
@@ -293,13 +315,44 @@ theorem even_major_kernel_floor (n Q : ℕ) (even : Even n) (hq : 1≤Q) :
     _ ≤ g ∅*windowKernel Q (supportProduct ∅)/2 := by simpa [g] using (div_le_div_of_nonneg_right one (by norm_num : (0:ℝ)≤2))
     _ ≤ _ := by
       apply single_le_sum (f:=fun R => g R*windowKernel Q (supportProduct R)/2) _ emp
-      intro R hr
-      have hg : 0≤g R := prod_nonneg fun p hp => by
-        have pg := mem_filter.mp (mem_powerset.mp hr hp : p∈G)
-        have pr := Nat.prime_of_mem_primesLE pg.1
-        have h : (1:ℝ)≤p := by exact_mod_cast pr.pos
-        rw [localSign,ite_eq_left pg.2]; positivity
-      exact div_nonneg (mul_nonneg hg (kernel_nonneg ..)) (by norm_num)
+      exact divisor_support_nonneg
+
+/-- Each chosen prime divisor contributes even after all supports containing
+a nondividing prime are included with their original signs. -/
+theorem prime_divisors_major_kernel_floor (n Q : ℕ) (even : Even n) (P : Finset ℕ)
+    (hP : ∀ p ∈ P, p.Prime ∧ p ≤ Q ∧ p ∣ n) :
+    (archimedeanMass 1 / 2) * (∑ p ∈ P, 1 / (p:ℝ)) ≤
+      ∑ q ∈ Icc 1 Q, ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2*
+        archimedeanMass ((Q:ℝ)/q) := by
+  classical
+  let G := (Nat.primesLE Q).filter (· ∣ n)
+  let w (R : Finset ℕ) := (∏ p ∈ R, localSign n p) * windowKernel Q (supportProduct R) / 2
+  have sub : P.image (fun p => {p}) ⊆ G.powerset := by
+    intro R hR
+    obtain ⟨p, hp, rfl⟩ := mem_image.mp hR
+    obtain ⟨pr, bound, hd⟩ := hP p hp
+    exact mem_powerset.mpr (singleton_subset_iff.mpr
+      (mem_filter.mpr ⟨Nat.mem_primesLE.mpr ⟨bound, pr⟩, hd⟩))
+  calc
+    _ ≤ ∑ p ∈ P, w {p} := by
+      rw [mul_sum]
+      apply sum_le_sum
+      intro p hp
+      obtain ⟨pr, bound, hd⟩ := hP p hp
+      have pp : (1:ℝ) < p := by exact_mod_cast pr.one_lt
+      have pos : (0:ℝ) < p := by linarith
+      have mass := archimedean_mono 1 ((Q:ℝ)/p) zero_le_one
+        ((le_div_iff₀ pos).mpr (by simpa using (show (p:ℝ) ≤ Q by exact_mod_cast bound)))
+      have weight : 1 / (p:ℝ) ≤ 1 / ((p:ℝ)-1) :=
+        one_div_le_one_div_of_le (by linarith) (by linarith)
+      simp only [w, supportProduct, prod_singleton, localSign, hd, ite_true, windowKernel, bound]
+      have h := mul_le_mul weight mass (archimedean_one_pos.le) (by positivity)
+      linarith only [h]
+    _ = ∑ R ∈ P.image (fun p => {p}), w R := by
+      rw [sum_image (fun a _ b _ h => singleton_injective h)]
+    _ ≤ ∑ R ∈ G.powerset, w R :=
+      sum_le_sum_of_subset_of_nonneg sub (fun R hR _ => divisor_support_nonneg R hR)
+    _ ≤ _ := even_divisor_support_floor n Q even
 
 theorem even_major_model_floor (n : ℕ) (he : Even n) :
     (archimedeanMass 1/2)*n ≤ catalogueMajorModel n := by
