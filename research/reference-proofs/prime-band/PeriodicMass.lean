@@ -5,7 +5,7 @@ namespace GoldbachMinor
 open Finset GoldbachWeight Filter
 open scoped Topology
 
-private theorem ram_trace (q k : ℕ) : (ram q k : ℂ) = ∑ z ∈ primitiveRoots q ℂ, z^k := by
+theorem ram_trace (q k : ℕ) : (ram q k : ℂ) = ∑ z ∈ primitiveRoots q ℂ, z^k := by
   rw [GoldbachRamanujan.primitive_power_sum]
   unfold ram
   push_cast
@@ -13,7 +13,7 @@ private theorem ram_trace (q k : ℕ) : (ram q k : ℂ) = ∑ z ∈ primitiveRoo
   intro d _
   split_ifs <;> simp
 
-private theorem abs_ram_le (q k : ℕ) (hq : 0 < q) : |ram q k| ≤ q := by
+theorem abs_ram_le (q k : ℕ) (hq : 0 < q) : |ram q k| ≤ q := by
   calc
     _ = ‖(ram q k:ℂ)‖ := by simp
     _ ≤ ∑ z ∈ primitiveRoots q ℂ, ‖z^k‖ := by rw [ram_trace]; exact norm_sum_le ..
@@ -62,36 +62,40 @@ private theorem periodic_block (b : ℕ→ℝ) (q P s : ℕ) (hq : 0<q) (h : ¬q
   simp_rw [shifted,show ∀ j : ℕ, s+j*P+r=s+r+j*P by intro; omega, ← mul_sum]
   rw [ram_progression_period q P _ hq h,mul_zero]
 
-/-- Only the final incomplete period contributes on an arbitrary window. -/
-theorem periodic_window_bound (b : ℕ→ℝ) (q P K H : ℕ) (C : ℝ)
-    (hp : 0<P) (hq : 0<q) (h : ¬q ∣ P) (hC : 0≤C) (hb : ∀ r<P, |b r|≤C) :
-    |∑ k ∈ Ioc K H, b (k%P)*ram q k| ≤ C*(P:ℝ)*q^2 := by
-  let G := q*P
-  let f (k : ℕ) := b (k%P)*ram q k
+/-- A bounded summand with zero sum on every shifted complete block leaves only a remainder. -/
+theorem zero_block_window (f : ℕ→ℝ) (G K H : ℕ) (C : ℝ)
+    (hG : 0<G) (hC : 0≤C) (hf : ∀ k, |f k|≤C)
+    (block : ∀ s, ∑ k ∈ range G, f (s+k) = 0) :
+    |∑ k ∈ Ioc K H, f k| ≤ (G:ℝ)*C := by
   have zero (m s : ℕ) : ∑ k ∈ range (m*G), f (s+k) = 0 := by
     induction m with
     | zero => simp
     | succ m ih =>
       rw [Nat.succ_mul,sum_range_add,ih,zero_add]
       simp_rw [← Nat.add_assoc]
-      exact periodic_block b q P _ hq h
-  have bound (s T : ℕ) : |∑ k ∈ range T, f (s+k)| ≤ C*P*q^2 := by
+      exact block _
+  have bound (s T : ℕ) : |∑ k ∈ range T, f (s+k)| ≤ (G:ℝ)*C := by
     have split : T = (T/G)*G + T%G := (Nat.div_add_mod' T G).symm
     conv_lhs => rw [split,sum_range_add,zero,zero_add]
     calc
       _ ≤ _ := Finset.abs_sum_le_sum_abs ..
-      _ ≤ ∑ _k ∈ range (T%G), C*(q:ℝ) := by
-        apply sum_le_sum
-        intro k _
-        unfold f
-        rw [abs_mul]
-        exact mul_le_mul (hb _ (Nat.mod_lt _ hp)) (abs_ram_le q _ hq) (abs_nonneg _) hC
-      _ = (T%G:ℕ)*(C*(q:ℝ)) := by simp
-      _ ≤ (G:ℝ)*(C*(q:ℝ)) := by
-        exact mul_le_mul_of_nonneg_right (by exact_mod_cast (Nat.mod_lt T (Nat.mul_pos hq hp)).le) (by positivity)
-      _ = _ := by unfold G; push_cast; ring
+      _ ≤ ∑ _k ∈ range (T%G), C := sum_le_sum (fun _ _ => hf _)
+      _ = (T%G:ℕ)*C := by simp
+      _ ≤ _ := mul_le_mul_of_nonneg_right (by exact_mod_cast (Nat.mod_lt T hG).le) hC
   rw [← Ico_add_one_add_one_eq_Ioc, sum_Ico_eq_sum_range]
   exact bound _ _
+
+/-- Only the final incomplete period contributes on an arbitrary window. -/
+theorem periodic_window_bound (b : ℕ→ℝ) (q P K H : ℕ) (C : ℝ)
+    (hp : 0<P) (hq : 0<q) (h : ¬q ∣ P) (hC : 0≤C) (hb : ∀ r<P, |b r|≤C) :
+    |∑ k ∈ Ioc K H, b (k%P)*ram q k| ≤ C*(P:ℝ)*q^2 := by
+  have hf (k : ℕ) : |b (k%P)*ram q k| ≤ C*q := by
+    rw [abs_mul]
+    exact mul_le_mul (hb _ (Nat.mod_lt _ hp)) (abs_ram_le q _ hq) (abs_nonneg _) hC
+  refine (zero_block_window _ (q*P) K H (C*q) (Nat.mul_pos hq hp) (by positivity) hf
+    (fun s => periodic_block b q P s hq h)).trans_eq ?_
+  push_cast
+  ring
 
 /-- The signed linearized contribution from denominators above B on an offset window. -/
 noncomputable def largeDenominatorSum (Q n B K H : ℕ) (mass : ℕ → ℝ) : ℝ :=
