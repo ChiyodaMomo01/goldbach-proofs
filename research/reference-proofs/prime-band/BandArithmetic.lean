@@ -56,6 +56,15 @@ private theorem invert_trace (k : ℕ) :
       (mul_assoc ..).symm
     _ = _ := by rw [conv]
 
+/-- The Ramanujan divisor formula is the power sum of primitive roots. -/
+theorem primitive_power_sum (q k : ℕ) :
+    (∑ z ∈ primitiveRoots q ℂ, z^k) = ∑ d ∈ q.divisors,
+      (if d ∣ k then (d:ℂ) else 0) * (ArithmeticFunction.moebius (q/d):ℂ) := by
+  change primitiveTrace k q = _
+  rw [invert_trace, ArithmeticFunction.mul_apply,
+    Nat.sum_divisorsAntidiagonal (fun x y => divisibleTrace k x * (μ : ArithmeticFunction ℂ) y)]
+  rfl
+
 /-- Sum the exact catalogue phase over reduced centers. No coprimality is required of k. -/
 theorem all_frequencies {q : ℕ} (hq : 0 < q) (k : ℕ) :
     (∑ a ∈ (range q).filter (fun a => Nat.Coprime a q),
@@ -81,11 +90,7 @@ theorem all_frequencies {q : ℕ} (hq : 0 < q) (k : ℕ) :
         congr 1
         push_cast
         ring
-    _ = _ := by
-      change primitiveTrace k q = _
-      rw [invert_trace, ArithmeticFunction.mul_apply,
-        Nat.sum_divisorsAntidiagonal (fun x y => divisibleTrace k x * (μ : ArithmeticFunction ℂ) y)]
-      rfl
+    _ = _ := primitive_power_sum q k
 
 end GoldbachRamanujan
 

@@ -11,7 +11,7 @@ noncomputable def firstBandCoefficient (Q n B k : ℕ) : ℝ :=
     (if q ≤ B then Real.sin (2*Real.pi*(k:ℝ)*((Q:ℝ)/(q*n))) / (Real.pi*k)
      else 2*(Q:ℝ)/((q:ℝ)*n))
 
-private theorem pair_mass_bound (n k : ℕ) (hn : 0<n) :
+theorem pair_mass_bound (n k : ℕ) (hn : 0<n) :
     |pairMass n k (high n)| ≤ (Real.log 4*n) * (2*Real.log n) := by
   let S (p : ℕ) := (range (n+1)).filter (fun r => (offset n p r).natAbs = k)
   have card (p : ℕ) : (S p).card ≤ 2 := by
@@ -181,10 +181,11 @@ theorem first_band_negligible (ε : ℝ) (hε : 0<ε) : ∃ N : ℕ, ∀ n≥N, 
 noncomputable def divisibleMass (n K H d : ℕ) : ℝ :=
   ∑ k ∈ (Ioc K H).filter (d ∣ ·), pairMass n k (high n)
 
-private theorem ram_against_mass (n K H q : ℕ) :
-    (∑ k ∈ Ioc K H, pairMass n k (high n) * ram q k) =
-    ∑ d ∈ q.divisors, ((d:ℝ) * (ArithmeticFunction.moebius (q/d):ℝ)) * divisibleMass n K H d := by
-  unfold ram divisibleMass
+theorem ram_weighted_divisors (mass : ℕ→ℝ) (K H q : ℕ) :
+    (∑ k ∈ Ioc K H, mass k * ram q k) =
+    ∑ d ∈ q.divisors, ((d:ℝ) * (ArithmeticFunction.moebius (q/d):ℝ)) *
+      ∑ k ∈ (Ioc K H).filter (d ∣ ·), mass k := by
+  unfold ram
   simp_rw [mul_sum]
   rw [sum_comm]
   apply sum_congr rfl
@@ -194,6 +195,11 @@ private theorem ram_against_mass (n K H q : ℕ) :
   intro k _
   by_cases h : d ∣ k <;> simp [h]
   ring
+
+theorem ram_against_mass (n K H q : ℕ) :
+    (∑ k ∈ Ioc K H, pairMass n k (high n) * ram q k) =
+    ∑ d ∈ q.divisors, ((d:ℝ) * (ArithmeticFunction.moebius (q/d):ℝ)) * divisibleMass n K H d :=
+  ram_weighted_divisors (fun k => pairMass n k (high n)) K H q
 
 /-- On large denominators only divisibility of the offset remains in the linearized model. -/
 theorem first_band_residue_formula (Q n B K H : ℕ) (hB : 1≤B) (hBQ : B≤Q) :
