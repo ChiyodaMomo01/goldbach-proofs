@@ -314,7 +314,7 @@ Fix a positive modulus $d$ and use the same window $T_j$ and total target weight
 3. The mean absolute error $\sum_{n\in T_j}|R(n)-M(n)|/W_j$ tends to zero.
 4. The mean negative part of the frozen integral, $\sum_{n\in T_j}\max\{-I(n),0\}/W_j$, tends to zero.
 
-The equivalences are proved unconditionally. Whether these limits vanish remains open in this formalization. The first implication to exceptional fractions is Markov's inequality. For its converse we proved a **uniform second-moment bound on the normalized shortfall**. There is a constant $C_d>0$ such that, for all sufficiently large $j$,
+The equivalences are proved unconditionally. The classical mean-square hypothesis at the normalization specified below suffices for all four limits. An unconditional proof for the prime-pair count remains open in this formalization. The first implication to exceptional fractions is Markov's inequality. For its converse we proved a **uniform second-moment bound on the normalized shortfall**. There is a constant $C_d>0$ such that, for all sufficiently large $j$,
 
 $$
 \frac1j\sum_{n\in T_j}\left(\frac{D(n)}n\right)^2\le C_d.
@@ -338,6 +338,27 @@ python3 research/reference-proofs/prime-band/progression_means.py --powers 12 14
 ```
 
 For scales through 4,096, the script checks every target by a direct prime-pair sum and an independent gcd formula for the model. At larger scales it checks the two endpoints, both extreme errors, and the targets nearest the threshold and zero. The output reports how many computed normalized deficits lie within $10^{-10}$ of the threshold. That count is zero in each row above.
+
+### Mean absolute agreement with the classical singular series
+
+Let $C_2$ be the twin-prime constant and $S(n)$ the normalized binary singular-series shape. For any fixed positive modulus $d$, take the window $T_j$ and weight $W_j$ defined above. The finite catalogue model satisfies
+
+$$
+\lim_{j\to\infty}\frac{1}{W_j}\sum_{n\in T_j}
+  \big|M(n)-2C_2 n S(n)\big|=0.
+$$
+
+This arithmetic comparison is **unconditional**. By the triangle inequality, the exceptional count fraction tends to zero at every fixed positive tolerance exactly when the weighted mean absolute error between the true count and the classical main term tends to zero. This equivalence requires no convergence rate. The explicit hypothesis `ClassicalMeanSquare (2*twinPrimeConstant)` suffices for that criterion. Under the same hypothesis the proportion of targets where the original frozen minor-arc integral falls below $-\varepsilon n$ also tends to zero for each fixed $\varepsilon>0$. The catalogue still asks for a lower bound for every sufficiently large even target. ([Model comparison and conditional density theorem](ModelAbsoluteMean.lean))
+
+**Uniform control of large denominators.** For a positive integer $q$, let $\tau(q)$ count its positive divisors and put $b_q=\tau(q)\mu(q)^2/\varphi(q)^2$. In the divisor formula for the Ramanujan sum, each divisor $a$ contributes in absolute value at most $a$ on its multiples. Up to a positive integer $X$ this costs at most $a\lfloor X/a\rfloor\le X$. Thus $\sum_{1\le n\le X}|c_q(n)|\le X\tau(q)$. For squarefree $q$, the quantity $b_q$ factors as the product of $2/(p-1)^2$ over primes $p$ dividing $q$. For other $q$ it vanishes. The local weights are summable, which gives $\sum_{q\ge1} b_q<\infty$.
+
+For a nonnegative integer $K$, write $M_{>K}(n)$ for the part of $M(n)$ from denominators strictly above $K$, with the original arc weights. Every window with $j\ge1$ satisfies
+
+$$
+\frac{1}{W_j}\sum_{n\in T_j}|M_{>K}(n)|\le 4d\sum_{q>K} b_q.
+$$
+
+The same cutoff $K$ therefore works for every window at that modulus. For each fixed $q$, the retained arc mass tends to one. The summable bound allows this limit to pass through the sum over all denominators. At each fixed positive target the complete sum is absolutely convergent. Expanding the finite Euler product over primes up to a cutoff and passing to the limit identifies it with $2C_2 S(n)$, including the local factor at $2$. ([Prefix bound and uniform tail](ConductorTail.lean), [Euler product identification](RamanujanMainTerm.lean), [arc mass normalization](ArcMassNormalization.lean))
 
 ### 本地复核
 

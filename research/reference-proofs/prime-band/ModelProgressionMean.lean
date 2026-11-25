@@ -18,7 +18,7 @@ private theorem cutoff_tends : Tendsto catalogueCutoff atTop atTop := by
   have h : k ≤ Nat.log 2 (n+2) := Nat.le_log_of_pow_le (by decide) (by omega)
   simpa [catalogueCutoff, pow_two] using h.trans (Nat.le_mul_self _)
 
-private theorem kernel_bounds (Q q : ℕ) : 0 ≤ windowKernel Q q ∧ windowKernel Q q ≤ 1 := by
+theorem kernel_bounds (Q q : ℕ) : 0 ≤ windowKernel Q q ∧ windowKernel Q q ≤ 1 := by
   unfold windowKernel
   split_ifs
   · exact ⟨archimedean_nonneg _ (by positivity), archimedean_mass_le_one _ (by positivity)⟩
@@ -33,6 +33,17 @@ private theorem kernel_mono (q : ℕ) : Monotone (fun Q => windowKernel Q q) := 
   · rw [show windowKernel a q = 0 by simp [windowKernel,ha]]
     exact (kernel_bounds b q).1
 
+theorem catalogue_kernel_mono (q : ℕ) : Monotone (fun n => windowKernel (catalogueCutoff n) q) :=
+  (kernel_mono q).comp cutoff_mono
+
+theorem catalogue_kernel_tends (q : ℕ) (qp : 0 < q) :
+    Tendsto (fun n => windowKernel (catalogueCutoff n) q) atTop (𝓝 1) := by
+  have h : Tendsto (fun n => ((catalogueCutoff n:ℕ):ℝ)/q) atTop atTop :=
+    (tendsto_natCast_atTop_atTop.comp cutoff_tends).atTop_div_const (by exact_mod_cast qp)
+  apply (archimedean_mass_tends_to_one.comp h).congr'
+  filter_upwards [cutoff_tends.eventually_ge_atTop q] with n hn
+  simp [windowKernel, hn]
+
 /-- The finite-window contribution of conductors dividing the progression modulus. -/
 noncomputable def resonantRatio (d n : ℕ) : ℝ :=
   ∑ q ∈ d.divisors, (ram q 0 * coeff q) * windowKernel (catalogueCutoff n) q
@@ -43,12 +54,7 @@ private theorem resonant_tends (d : ℕ) (hd : 0 < d) :
   apply tendsto_finsetSum
   intro q hq
   have qp := Nat.pos_of_mem_divisors hq
-  have h : Tendsto (fun n => ((catalogueCutoff n:ℕ):ℝ)/q) atTop atTop :=
-    (tendsto_natCast_atTop_atTop.comp cutoff_tends).atTop_div_const (by exact_mod_cast qp)
-  have k : Tendsto (fun n => windowKernel (catalogueCutoff n) q) atTop (𝓝 1) := by
-    apply (archimedean_mass_tends_to_one.comp h).congr'
-    filter_upwards [cutoff_tends.eventually_ge_atTop q] with n hn
-    simp [windowKernel, hn]
+  have k := catalogue_kernel_tends q qp
   simpa [coeff] using k.const_mul (ram q 0 * coeff q)
 
 private theorem split_target (d n Q : ℕ) (hd : 0 < d) (h : d ∣ n)

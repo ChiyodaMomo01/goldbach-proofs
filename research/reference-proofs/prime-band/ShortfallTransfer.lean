@@ -66,7 +66,7 @@ theorem classical_dyadic_absolute_mean (c : ℝ) (hc : ClassicalMeanSquare c) (d
     div_lt_iff₀ wp]
   exact strict.trans_le (mul_le_mul_of_nonneg_left scale ep.le)
 
-private theorem triangle_transfer (d : ℕ) (f g h : ℕ → ℝ)
+theorem dyadic_absolute_triangle_transfer (d : ℕ) (f g h : ℕ → ℝ)
     (fg : Tendsto (dyadicRatio d (fun n => |f n-g n|)) atTop (𝓝 0))
     (gh : Tendsto (dyadicRatio d (fun n => |g n-h n|)) atTop (𝓝 0)) :
     Tendsto (dyadicRatio d (fun n => |f n-h n|)) atTop (𝓝 0) := by
@@ -87,9 +87,9 @@ theorem density_iff_model_matches_classical (c : ℝ) (hc : ClassicalMeanSquare 
   rw [← shortfall_mean_iff_density d hd, ← absolute_mean_iff_shortfall d hd]
   constructor
   · intro hm
-    exact triangle_transfer d catalogueMajorModel goldbachCount main (by simpa only [abs_sub_comm] using hm) h
+    exact dyadic_absolute_triangle_transfer d catalogueMajorModel goldbachCount main (by simpa only [abs_sub_comm] using hm) h
   · intro hm
-    exact triangle_transfer d goldbachCount main catalogueMajorModel h (by simpa only [abs_sub_comm] using hm)
+    exact dyadic_absolute_triangle_transfer d goldbachCount main catalogueMajorModel h (by simpa only [abs_sub_comm] using hm)
 
 #print axioms density_iff_model_matches_classical
 end GoldbachMinor

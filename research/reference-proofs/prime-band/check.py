@@ -33,7 +33,8 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "AveragedBand", "ConductorEuler", "VaughanAlignment", "InfiniteBand",
            "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput", "MajorModelGrowth", "ProgressionMean",
            "ArcMassNormalization", "ProgressionConductors", "ModelProgressionMean", "ProgressionWitness",
-           "ShortfallEnergy", "ShortfallDensity", "ShortfallTransfer")
+           "ShortfallEnergy", "ShortfallDensity", "ShortfallTransfer",
+           "ConductorTail", "RamanujanMainTerm", "ModelAbsoluteMean")
 
 
 def verified_input(commit, name, digest):
