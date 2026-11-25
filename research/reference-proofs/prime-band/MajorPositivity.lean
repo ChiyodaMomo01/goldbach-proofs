@@ -108,7 +108,7 @@ theorem signed_bad_support_floor (S : Finset ℕ) (hS : ∀ p∈S, Nat.Prime p �
 noncomputable def localSign (n p : ℕ) : ℝ :=
   if p∣n then 1/((p:ℝ)-1) else -(1/((p:ℝ)-1)^2)
 
-private theorem coefficient_factorization (n q : ℕ) (sq : Squarefree q) :
+theorem coefficient_factorization (n q : ℕ) (sq : Squarefree q) :
     ram q n*((ArithmeticFunction.moebius q:ℝ)/q.totient)^2 = ∏ p ∈ q.primeFactors, localSign n p := by
   have phi : q.totient=∏ p ∈ q.primeFactors, (p-1) := by
     have h := Nat.totient_mul_prod_primeFactors q
@@ -133,7 +133,7 @@ private theorem support_sq (A : Finset ℕ) (pr : ∀ p∈A, Nat.Prime p) :
   have h := Nat.squarefree_prod_primeFactors (supportProduct A)
   simpa only [supportProduct,Nat.primeFactors_prod pr] using h
 
-private noncomputable def windowKernel (Q q : ℕ) : ℝ :=
+noncomputable def windowKernel (Q q : ℕ) : ℝ :=
   if q≤Q then archimedeanMass ((Q:ℝ)/q) else 0
 
 private theorem model_support_sum (n Q : ℕ) :
@@ -208,10 +208,10 @@ private theorem split_support (G B : Finset ℕ) (dis : Disjoint G B) (f : Finse
     tauto
   · intro _ _; rfl
 
-private theorem archimedean_nonneg (z : ℝ) (hz : 0≤z) : 0≤archimedeanMass z :=
+theorem archimedean_nonneg (z : ℝ) (hz : 0≤z) : 0≤archimedeanMass z :=
   intervalIntegral.integral_nonneg (by linarith) (fun _ _ => sq_nonneg _)
 
-private theorem archimedean_mono (x y : ℝ) (hx : 0≤x) (h : x≤y) : archimedeanMass x≤archimedeanMass y := by
+theorem archimedean_mono (x y : ℝ) (hx : 0≤x) (h : x≤y) : archimedeanMass x≤archimedeanMass y := by
   apply intervalIntegral.integral_mono_interval (neg_le_neg h) (by linarith) h
     (Filter.Eventually.of_forall fun _ => sq_nonneg _) ((by fun_prop : Continuous _).intervalIntegrable ..)
 

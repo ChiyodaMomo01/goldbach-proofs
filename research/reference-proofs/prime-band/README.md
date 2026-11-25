@@ -285,6 +285,26 @@ With NumPy and SciPy installed, run the following from the repository root to re
 python3 research/reference-proofs/prime-band/progression_means.py --powers 14 17 20 22 --moduli 2 6 24 120 720 5040
 ```
 
+### Mean error for the actual catalogue arcs
+
+Fix an integer $d\ge1$. For each positive integer $j$, let $T_j$ be the multiples of $d$ in $[dj,2dj)$ and let $W_j=\sum_{n\in T_j} n$. Write $I(n)$ for the real part of the frozen minor-arc integral with both inputs equal to the catalogue's high-prime weight. With the integration radius and the target-dependent cutoff from the catalogue, the three limits are
+
+$$
+\frac{1}{W_j}\sum_{n\in T_j}M(n)\longrightarrow\frac{d}{\varphi(d)},
+\qquad
+\frac{1}{W_j}\sum_{n\in T_j}\bigl(R(n)-M(n)\bigr)\longrightarrow 0,
+\qquad
+\frac{1}{W_j}\sum_{n\in T_j}I(n)\longrightarrow 0.
+$$
+
+The kernel normalization follows from Parseval on the unit interval. For real $x$, the squared Fourier coefficients of a unit-modulus exponential sum to one. Integrating that identity in $x$ over a unit interval gives $\int_{\mathbb R}\operatorname{sinc}^2(\pi x)\,dx=1$, with $\operatorname{sinc}(t)=\sin(t)/t$ and $\operatorname{sinc}(0)=1$. Thus the mass $J(z)$ of the symmetric interval $[-z,z]$ tends to one as $z$ increases. ([Integral normalization](ArcMassNormalization.lean))
+
+For an integer denominator $q$ dividing $d$, the Ramanujan sum is constant on the progression. The sum of these limiting coefficients is exactly $d/\varphi(d)$. When $q$ does not divide $d$, every complete period sums to zero. Each incomplete prefix has magnitude at most $q^2$. For fixed $q$, the factor consisting of the target times the retained integral mass is nonnegative and increasing, including where $q$ first enters the cutoff. Summation by parts therefore controls its contribution across changes of cutoff. With $X=2dj$ and $Q$ the catalogue cutoff at $X$, the combined nondividing-denominator error is at most $2XQ^3$, which is $o(W_j)$ for fixed $d$. ([Period and coefficient estimates](ProgressionConductors.lean), [moving-cutoff error and mean limits](ModelProgressionMean.lean))
+
+The third limit uses the certified major-arc approximation and the error from removing the small primes. All three are signed averages. A sparse sequence of targets with a large negative minor-arc integral would be compatible with them. The catalogue's lower bound at every sufficiently large even target remains open. ([Transfer to the frozen integral](ModelProgressionMean.lean))
+
+**A consequence for individual targets.** Fix $d\ge1$ and a tolerance $\varepsilon>0$. Every sufficiently large window $T_j$ contains a single target $n$ satisfying both $I(n)\ge-\varepsilon n$ and $R(n)\ge M(n)-\varepsilon n$. If all the integrals in the window fell below $-\varepsilon n/2$, their weighted mean would stay below $-\varepsilon/2$. The pointwise approximation transfers the resulting witness to the count bound with the remaining half of the tolerance. Moreover, for any real $B$, one can choose a fixed factorial modulus $d=k!$, with $k\ge2$, so that every sufficiently large window contains an even witness with $R(n)\ge Bn$ as well as the requested integral bound. The factorial determines the progression. Its multiples supply the witnesses. ([Witnesses and quantifiers](ProgressionWitness.lean))
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）

@@ -77,7 +77,7 @@ theorem bulk_iff_pair_floor (fit : MajorModelFits) :
     obtain ⟨l,u⟩ := abs_le.mp (hM n (by omega)) <;>
     linarith only [l,u,hA n (by omega) he]
 
-private theorem diagonal_error (ε : ℝ) (ep : 0<ε) : ∀ᶠ n : ℕ in atTop,
+theorem diagonal_error (ε : ℝ) (ep : 0<ε) : ∀ᶠ n : ℕ in atTop,
     0≤goldbachCount n-pairMass n 0 (high n) ∧
     goldbachCount n-pairMass n 0 (high n)≤ε*n := by
   have lim : Tendsto (fun z : ℝ => (2*Real.log 4)*(z*Real.exp (-(1/2)*z))) atTop (nhds 0) := by
