@@ -158,7 +158,7 @@ theorem periodic_resonance_bound (c : ℝ) (n : ℕ) (hn : 0<n) :
     _ ≤ L^2*(20*|c| *L^7) := mul_le_mul_of_nonneg_right card (by positivity)
     _ = _ := by dsimp only [L]; ring
 
-private theorem resonance_negligible (c ε : ℝ) (he : 0<ε) :
+theorem resonance_negligible (c ε : ℝ) (he : 0<ε) :
     ∃ N:ℕ, ∀ n≥N, |periodicBandLoss c n-resonantBandLoss c n| ≤ ε*n := by
   let D := 20*|c|+1
   have hD : 0<D := by dsimp [D]; positivity

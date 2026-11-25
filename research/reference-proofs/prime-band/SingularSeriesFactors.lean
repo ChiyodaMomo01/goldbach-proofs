@@ -126,6 +126,15 @@ theorem factor_second_uniform (S : Finset ℕ) (hS : ∀ p∈S, 3≤p) :
     _ = _ := (Real.exp_sum ..).symm
     _ ≤ _ := Real.exp_le_exp.mpr mass
 
+/-- Uniform mean of the finite local factors, also when every prime from three is retained. -/
+theorem factor_mean_uniform (S : Finset ℕ) (hs : ∀ p∈S, 3≤p) :
+    (∏ p ∈ S, factorMean p) ≤ Real.exp 9 := by
+  apply le_trans _ (factor_second_uniform S hs)
+  apply prod_le_prod₀ (fun p hp => zero_le_one.trans (factor_bounds p (hs p hp)).1)
+  intro p hp
+  have h := factor_bounds p (hs p hp)
+  exact le_trans (by nlinarith [h.1,sq_nonneg (factorMean p-1)]) h.2.1
+
 /-- Uniform inverse-square tail for the two Goldbach Euler moments, for every finite
 set above the cutoff. Neither the set's size nor its largest prime enters the bound. -/
 theorem goldbach_factor_tail (y : ℕ) (hy : 2≤y) (S : Finset ℕ) (hS : ∀ p∈S, y<p) :

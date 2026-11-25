@@ -161,7 +161,7 @@ private theorem weight_le_divisors (A : Finset ℕ) (hp : ∀ p∈A, Nat.Prime p
 noncomputable def oddFactorProduct (S : Finset ℕ) (m : ℕ) : ℝ :=
   ∏ p ∈ S.filter (· ∣ m), (1+goldbachFactor p)
 
-private theorem support_expansion (S : Finset ℕ) (hp : ∀ p∈S, Nat.Prime p) (m : ℕ) (f : ℕ→ℝ) :
+theorem support_expansion (S : Finset ℕ) (hp : ∀ p∈S, Nat.Prime p) (m : ℕ) (f : ℕ→ℝ) :
     (∏ p ∈ S.filter (· ∣ m), (1+f p)) =
       ∑ A ∈ S.powerset, if factorDivisor A ∣ m then ∏ p ∈ A, f p else 0 := by
   have eq : (S.filter (· ∣ m)).powerset = S.powerset.filter (fun A => factorDivisor A ∣ m) := by
@@ -251,19 +251,19 @@ theorem odd_factor_window (S : Finset ℕ) (hp : ∀ p∈S, Nat.Prime p ∧ 3≤
     _ ≤ _ := by nlinarith only [bound, mul_le_mul_of_nonneg_left main hT, hs]
 
 
-private def oddPrimesTo (X : ℕ) := (Nat.primesLE X).filter (3≤·)
+def shapePrimes (X : ℕ) := (Nat.primesLE X).filter (3≤·)
 
 /-- Binary Goldbach singular series truncated at y, with the common factor 2 C₂
 removed. Parity is retained even when the set of odd primes is empty. -/
 noncomputable def binaryShape (y m : ℕ) : ℝ :=
-  if 2 ∣ m then oddFactorProduct (oddPrimesTo y) m else 0
+  if 2 ∣ m then oddFactorProduct (shapePrimes y) m else 0
 
 /-- Each retained local factor is at most its prime. This crude uniform bound
 also covers residue zero, where every local factor is present. -/
 theorem abs_binaryShape_le_factorial (y m : ℕ) : |binaryShape y m| ≤ y.factorial := by
   unfold binaryShape oddFactorProduct
   split_ifs
-  · let S := (oddPrimesTo y).filter (· ∣ m)
+  · let S := (shapePrimes y).filter (· ∣ m)
     have prime (p) (hp : p∈S) : 3≤p ∧ p≤y := by
       obtain ⟨hs,_⟩ := mem_filter.mp hp
       obtain ⟨hy,hl⟩ := mem_filter.mp hs
@@ -292,10 +292,10 @@ theorem abs_binaryShape_le_factorial (y m : ℕ) : |binaryShape y m| ≤ y.facto
 theorem binaryShape_residue (y m : ℕ) (hy : 2≤y) :
     binaryShape y (m % y.factorial) = binaryShape y m := by
   have two : 2 ∣ y.factorial := Nat.dvd_factorial (by decide) hy
-  have filters : (oddPrimesTo y).filter (· ∣ m % y.factorial) =
-      (oddPrimesTo y).filter (· ∣ m) := by
+  have filters : (shapePrimes y).filter (· ∣ m % y.factorial) =
+      (shapePrimes y).filter (· ∣ m) := by
     ext p
-    by_cases h : p ∈ oddPrimesTo y
+    by_cases h : p ∈ shapePrimes y
     · have hpy := Nat.mem_primesLE.mp (mem_filter.mp h).1
       simpa only [mem_filter,h,true_and] using
         (Nat.dvd_mod_iff (Nat.dvd_factorial hpy.2.pos hpy.1) : p ∣ m % y.factorial ↔ p ∣ m)
@@ -307,21 +307,21 @@ approximation on every window of positive integers. -/
 theorem binary_shape_window (K H y : ℕ) (hKH : K≤H) (hy : 2≤y) :
     (∑ m ∈ Ioc K H, (binaryShape m m - binaryShape y m)^2) ≤
       ((H:ℝ)-K)*(Real.exp 9*(9*Real.exp 9+(3*Real.exp 9)^2)/(y:ℝ)^2) + 4*(harmonicCutoff H)^4 := by
-  let S := oddPrimesTo (max H y)
+  let S := shapePrimes (max H y)
   have hp (p) (h : p∈S) : Nat.Prime p ∧ 3≤p :=
     ⟨Nat.prime_of_mem_primesLE (mem_filter.mp h).1,(mem_filter.mp h).2⟩
-  have low : S.filter (·≤y) = oddPrimesTo y := by
+  have low : S.filter (·≤y) = shapePrimes y := by
     ext p
-    simp only [S,oddPrimesTo,mem_filter,Nat.mem_primesLE]
+    simp only [S,shapePrimes,mem_filter,Nat.mem_primesLE]
     exact ⟨fun ⟨⟨⟨_,pr⟩,h3⟩,h⟩ => ⟨⟨h,pr⟩,h3⟩,
       fun ⟨⟨h,pr⟩,h3⟩ => ⟨⟨⟨h.trans (le_max_right ..),pr⟩,h3⟩,h⟩⟩
   apply le_trans _ (odd_factor_window S hp K H y hKH hy)
   apply sum_le_sum
   intro m hm
   have hm' := mem_Ioc.mp hm
-  have full : (oddPrimesTo m).filter (· ∣ m) = S.filter (· ∣ m) := by
+  have full : (shapePrimes m).filter (· ∣ m) = S.filter (· ∣ m) := by
     ext p
-    simp only [S,oddPrimesTo,mem_filter,Nat.mem_primesLE]
+    simp only [S,shapePrimes,mem_filter,Nat.mem_primesLE]
     constructor
     · rintro ⟨⟨⟨h,pr⟩,h3⟩,hd⟩
       exact ⟨⟨⟨by omega,pr⟩,h3⟩,hd⟩

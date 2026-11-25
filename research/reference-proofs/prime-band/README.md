@@ -169,6 +169,45 @@ $$
 
 因此，在经典均方假设下，原高高项下界等价于以下单侧比较：将 $k>H$ 的真实带符号贡献与 $R_n$ 相加，所得结果至多为真实零频贡献加 $o(n)$。这一步保留了零频的真实素数对计数。剩余约数项的大小和更高频率的单侧控制仍需研究。（[outer_resonant_iff](NonresonantBand.lean)）
 
+### 第一段贡献的显式公式
+
+令 $n$ 为目标偶数，$L=1+\lfloor\log_2(n+2)\rfloor$，$Q=(L-1)^2$。取满足 $y!\le L$ 的最大整数 $y$，记 $P=y!$。对正整数 $q$，令 $c_q(n)$ 为拉马努金和，$\varphi(q)$ 为欧拉函数。定义正弦积分 $\operatorname{Si}(x)=\int_0^x (\sin t)/t\,dt$，被积函数在零点取连续延拓值 $1$。沿用经典均方假设中的归一化常数 $c$，定义
+
+$$
+E_n=c\,n
+\prod_{\substack{3\le p\le y\\ p\text{ 为素数}}}
+\left(1+\frac{1}{p(p-2)}\right)
+\sum_{\substack{1\le q\le Q,\ q\mid P\\ q\text{ 无平方素因子}}}
+\frac{c_q(n)}{\varphi(q)^2}\,\frac{\operatorname{Si}(2\pi/q)}{\pi}.
+$$
+
+**在同一个经典均方假设下，真实第一频段贡献与 $E_n$ 的差为 $o(n)$。** 公式只需目标偶数、有限个小素数和正弦积分。例如，$4\mid P$ 时，分母 $4$ 的算术权重在完整周期上的平均严格为零。在实际窗口上，它仍可能产生边界误差。证明先对每个分母控制这个误差，再求和。（[完整周期的算术平均](ResonantMean.lean)，[实际窗口的误差](AveragedBand.lean)，[欧拉乘积公式](ConductorEuler.lean)）
+
+正负偏移量各贡献一次。每个奇素数 $p\mid q$ 使平均系数多出一个 $1/(p-1)^2$ 因子，素数 $2$ 对应的因子恰为 $1$。对网格上的正弦权重求和时，去掉开头的小窗口、上端点的取整以及网格近似均产生误差。三者在实际截断尺度上合计为 $o(n)$。（[双侧整周期恒等式](ResonantMean.lean)，[分母系数的精确分解](ConductorEuler.lean)，[正弦积分的两个端点](FirstBandSineIntegral.lean)）
+
+令 $O_n$ 为偏移量 $k>\lfloor n/Q\rfloor$ 的真实贡献，令 $D_n$ 为原问题的真实零频贡献。剩余任务是证明对任意 $\varepsilon>0$，每个充分大的偶数都满足 $O_n+E_n\le D_n+\varepsilon n$。在经典均方假设下，这条不等式与登记的高高项下界等价。（[冻结目标的等价定理](ConductorEuler.lean)）
+
+### 阶乘目标上，第一段有严格正的线性主项
+
+取文献中的归一化 $c=2C_2$。对整数 $m\ge0$，定义只依赖于各个同余类的函数
+
+$$
+F(m)=\sum_{\substack{q\ge1\\q\text{ 无平方素因子}}}
+\frac{c_q(m)}{\varphi(q)^2}\,\frac{\operatorname{Si}(2\pi/q)}{\pi}.
+$$
+
+这个级数对所有 $m$ 一致绝对收敛。原因是 $|c_q(m)|\le\varphi(q)$，无平方素因子的分母满足 $q\le 2\varphi(q)^2$，而 $|\operatorname{Si}(2\pi/q)|/\pi\le2/q$。所以每项绝对值都至多为 $4/q^{3/2}$。随着截点增长，每个固定分母最终进入阶乘周期。有限欧拉乘积的归一化因子也与截断的孪生素数常数逐项相消。（[一致收敛与归一化](InfiniteBand.lean)，[与 Vaughan 原式的对接](VaughanAlignment.lean)）
+
+记 $B_n$ 为窗口 $K<k\le H$ 内真实的第一段带符号贡献。在前述经典均方假设下，当 $n$ 沿偶数趋于无穷时有 $B_n=2nF(n)+o(n)$。因而也可以用 $2nF(n)$ 代替上文单侧比较中的 $E_n$。此式保留了第一段对目标数同余类的依赖。（[真实频段误差与原命题的等价式](InfiniteBand.lean)）
+
+**第一段不能整体计入次线性误差。** 令 $j$ 为趋于无穷的正整数，取目标为 $j!$。对每个固定 $q$，当 $j\ge q$ 时有 $q\mid j!$，于是 $c_q(j!)=\varphi(q)$。由一致可和的上界可以逐项取极限，得到
+
+$$
+\lim_{j\to\infty}\frac{B_{j!}}{j!}=2F(0)>0.
+$$
+
+这里的 $0$ 指各个分母下的零余数。级数在这个余数上的各项均为正，分母 $1$ 的一项已给出严格正的下界。该结论说明，要检验逐偶数的下界，必须计入这段贡献。更高频率与真实零频之间的单侧比较仍然开放。（[阶乘子列极限](InfiniteBand.lean)，[正弦积分的正性](FirstBandSineIntegral.lean)）
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，为两个既有输入读取已核验的固定版本，随后编译各证明模块。最后一步直接读取目录中 `L-goldbach-bulk-prefix-equivalence` 的完整声明，用等价定理逐字对接该类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）
