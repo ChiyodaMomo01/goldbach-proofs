@@ -133,15 +133,16 @@ theorem dyadic_exceptional_density_of_classical (hc : ClassicalMeanSquare (2*twi
 
 /-- Exceptional fraction for the original real part of the catalogue's
 high-prime minor-arc integral, using the same strict lower-floor failure. -/
-theorem dyadic_frozen_exceptional_density_of_classical
-    (hc : ClassicalMeanSquare (2*twinPrimeConstant)) (d : ℕ) (hd : 0 < d) (ε : ℝ) (he : 0 < ε) :
+theorem dyadic_frozen_exceptional_density_of_count
+    (d : ℕ) (hd : 0 < d) (density : ∀ ε : ℝ, 0 < ε → Tendsto (shortfallFrequency d ε) atTop (𝓝 0))
+    (ε : ℝ) (he : 0 < ε) :
     Tendsto (fun j : ℕ => (((Ico j (2*j)).filter (fun i =>
       (FrozenBulk.deskI (d*i) (FrozenBulk.deskHigh (d*i)) (FrozenBulk.deskHigh (d*i))).re <
         -(ε*(d*i:ℕ)))).card:ℝ)/j) atTop (𝓝 0) := by
   have half := half_pos he
   obtain ⟨N,hN⟩ := eventually_atTop.mp (frozen_count_error_sublinear (ε/2) half)
   apply squeeze_zero' (Eventually.of_forall fun j => by positivity) _
-    (dyadic_exceptional_density_of_classical hc d hd (ε/2) half)
+    (density (ε/2) half)
   filter_upwards [eventually_ge_atTop N, eventually_ge_atTop 1] with j hj jp
   apply div_le_div_of_nonneg_right _ (Nat.cast_nonneg j)
   apply Nat.cast_le.mpr
@@ -157,6 +158,13 @@ theorem dyadic_frozen_exceptional_density_of_classical
   rw [lt_div_iff₀ pos]
   apply lt_of_lt_of_le _ (le_max_left _ 0)
   linarith only [bound,bad]
+
+theorem dyadic_frozen_exceptional_density_of_classical
+    (hc : ClassicalMeanSquare (2*twinPrimeConstant)) (d : ℕ) (hd : 0 < d) (ε : ℝ) (he : 0 < ε) :
+    Tendsto (fun j : ℕ => (((Ico j (2*j)).filter (fun i =>
+      (FrozenBulk.deskI (d*i) (FrozenBulk.deskHigh (d*i)) (FrozenBulk.deskHigh (d*i))).re <
+        -(ε*(d*i:ℕ)))).card:ℝ)/j) atTop (𝓝 0) :=
+  dyadic_frozen_exceptional_density_of_count d hd (dyadic_exceptional_density_of_classical hc d hd) ε he
 
 #print axioms dyadic_model_absolute_classical
 #print axioms density_iff_classical_absolute_mean

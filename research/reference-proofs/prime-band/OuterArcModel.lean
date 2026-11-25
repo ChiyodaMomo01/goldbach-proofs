@@ -96,7 +96,7 @@ theorem model_arc_exact (Q n q a : ℕ) (hn : 0<n) (hq : 0<q) :
   push_cast
   field_simp
 
-private theorem center_trace (q n : ℕ) (hq : 0<q) :
+theorem center_trace (q n : ℕ) (hq : 0<q) :
     (∑ a ∈ (range q).filter (·.Coprime q), phase (-(n:ℝ)*((a:ℝ)/q))) = (ram q n:ℂ) := by
   have pos : (∑ a ∈ (range q).filter (·.Coprime q), phase ((n:ℝ)*((a:ℝ)/q))) = (ram q n:ℂ) := by
     calc

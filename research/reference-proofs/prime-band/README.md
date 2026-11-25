@@ -314,7 +314,7 @@ Fix a positive modulus $d$ and use the same window $T_j$ and total target weight
 3. The mean absolute error $\sum_{n\in T_j}|R(n)-M(n)|/W_j$ tends to zero.
 4. The mean negative part of the frozen integral, $\sum_{n\in T_j}\max\{-I(n),0\}/W_j$, tends to zero.
 
-The equivalences are proved unconditionally. The classical mean-square hypothesis at the normalization specified below suffices for all four limits. An unconditional proof for the prime-pair count remains open in this formalization. The first implication to exceptional fractions is Markov's inequality. For its converse we proved a **uniform second-moment bound on the normalized shortfall**. There is a constant $C_d>0$ such that, for all sufficiently large $j$,
+The equivalences are proved unconditionally. All four limits hold by the unconditional count estimate proved below. The first implication to exceptional fractions is Markov's inequality. For its converse we proved a **uniform second-moment bound on the normalized shortfall**. There is a constant $C_d>0$ such that, for all sufficiently large $j$,
 
 $$
 \frac1j\sum_{n\in T_j}\left(\frac{D(n)}n\right)^2\le C_d.
@@ -360,9 +360,27 @@ $$
 
 The same cutoff $K$ therefore works for every window at that modulus. For each fixed $q$, the retained arc mass tends to one. The summable bound allows this limit to pass through the sum over all denominators. At each fixed positive target the complete sum is absolutely convergent. Expanding the finite Euler product over primes up to a cutoff and passing to the limit identifies it with $2C_2 S(n)$, including the local factor at $2$. ([Prefix bound and uniform tail](ConductorTail.lean), [Euler product identification](RamanujanMainTerm.lean), [arc mass normalization](ArcMassNormalization.lean))
 
+### Unconditional density for the frozen signed floor
+
+Fix a positive integer $d$. For an index $j\ge 1$, let $T_j$ consist of the $j$ integers $n=di$ with $j\le i<2j$, and put $W_j=\sum_{n\in T_j}n$. Let $I(n)$ denote the real part of the exact catalogue integral with both prime factors above the cube-root cutoff. The reference checker proves
+
+$$
+\lim_{j\to\infty}\frac{1}{W_j}\sum_{n\in T_j}|I(n)|=0,\qquad
+\lim_{j\to\infty}\frac{\#\{n\in T_j:I(n)<-\varepsilon n\}}{j}=0
+\quad(\varepsilon>0).
+$$
+
+At $d=2$ this gives the proposed catalogue entry with its original arcs, high-prime weights and target phase. No classical Goldbach mean-square estimate is assumed. The pointwise floor still requires controlling the remaining sparse exceptions. The density theorem submitted in [PR #1667](https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/1667) counts targets with no representation in a prescribed prime interval. Here the measured quantity is the signed real Fourier coefficient at its original target-dependent cutoff. ([Count and frozen-integral theorems](UnconditionalDensity.lean), [exact catalogue type and checker](check.py))
+
+**One prime spectrum for the whole window.** Put $X=2dj$ and $Q=\lfloor\log_2(X+2)\rfloor^{20}$. Retain the full log-prime spectrum through $X$. For any $n\le X$, its squared spectrum integrated against the $n$th character on the full circle gives exactly the ordered weighted count $R(n)$. Outside the arcs of radii $Q/(qX)$ the uniform Vaughan estimate at exponent two bounds the spectrum by $X/(\log X)^2$. The fourth-moment inequality then bounds the sum of the squared norms of any initial segment of minor-arc coefficients by $2X^3/(\log X)^2$ for all sufficiently large $X$. Cauchy–Schwarz gives vanishing weighted mean absolute error. The arbitrary-frequency rational-arc approximation uses one error threshold for all $n\le X$. ([Common-spectrum minor estimate](WideMinorMean.lean), [full coefficient and major-arc accuracy](CommonArcProjection.lean))
+
+**Recovering the target-dependent main term.** For the discrete kernel $D_X(t)=\sum_{k=0}^X e^{2\pi i k t}$, the $n$th coefficient of its square on a full period is $n+1$ when $n\le X$. Integrating only over $[-b,b]$, with $0<b\le 1/2$, changes this coefficient by at most $2/b$, uniformly in $n$. This follows by integrating the inverse-square bound for the geometric sum over the two omitted intervals. The integral also has norm at most $X+1$. For $X/2\le n\le X$ these estimates bound the error in each positive-denominator factor relative to $n$ by $\min\{4,(4q+2)/Q\}$, including omitted denominators. This tends to zero at every fixed $q$ and is dominated by the summable arithmetic weights established above. Both arc models therefore approximate the same classical main term on the window. Applying the earlier pointwise transfer from the count to the frozen real part gives the stated limits. ([Uniform kernel bounds](CommonKernelTail.lean), [summation over denominators](CommonModelMean.lean))
+
+The checker extracts five sections from the pinned [PR #1667 proof](https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/813ca8c4a3e6ab6ef53180fc5a2c56275a19db88/lean/PEqualNP/Outside/L_goldbach_bulk_density_one.lean). It verifies the full source digest before extraction. The selected sections contain the Vaughan estimate, the fourth-moment estimate, the Dirichlet kernel coefficients, the arbitrary-cutoff square-model error and the rational-arc geometry. They retain the upstream proof's credits, including the OpenAI Vaughan development, DFQDZZ's #316 major-arc estimates, and the finite Fourier work used in #1667. ([Extraction ranges and pinned inputs](check.py))
+
 ### 本地复核
 
-在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）
+在仓库根目录执行以下命令。检查程序核对固定版本的弧不交引理、截断尺度引理以及 PR #316、#1667 的源码摘要，随后编译各证明模块。它还从目录逐字读取前缀等价式、主弧下界、计数等价式和有符号下界的例外密度命题，检查证明是否具有相应的类型，最后用 Lean 内核重检所有模块。（[复核程序](check.py)）
 
 ```sh
 (cd lean && lake exe cache get)

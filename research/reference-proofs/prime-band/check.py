@@ -27,6 +27,18 @@ INPUTS = {
     "UpstreamScale": ("4a29eb4239368944efb5c486fe59e10d85629cbd", "L_goldbach_arc_cutoff_scale",
                       "831e4b6c6e457aefb39e4d95b3d78f264e17bd7dd82ef30c965e381e8239be54"),
 }
+# These standalone sections of PR #1667 can coexist with the pinned #316 input.
+# The shared SHA covers the complete upstream file, including its attribution.
+DENSITY_INPUT = ("813ca8c4a3e6ab6ef53180fc5a2c56275a19db88", "L_goldbach_bulk_density_one",
+                 "845394da932eca218a676d612ce9181c38d18b569a04654c949bad39c7780e49")
+# Module name, import, inclusive source lines, and any enclosing section to close.
+DENSITY_SECTIONS = (
+    ("WideKernel", "Mathlib", 4856, 4969, ""),
+    ("WidePolylog", "UpstreamMajor316", 5066, 5474, ""),
+    ("WideVaughan", "Mathlib", 5478, 9055, ""),
+    ("WideGeometry", "Mathlib", 9061, 9310, ""),
+    ("WideBessel", "Mathlib", 9724, 9965, "end\n"),
+)
 MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduction", "TailPrefixes", "FirstBand", "PeriodicMass", "RamanujanEnergy",
            "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
            "SingularSeriesTransfer", "ExactFirstBand", "NonresonantBand", "ResonantMean", "FirstBandSineIntegral",
@@ -34,7 +46,8 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput", "MajorModelGrowth", "ProgressionMean",
            "ArcMassNormalization", "ProgressionConductors", "ModelProgressionMean", "ProgressionWitness",
            "ShortfallEnergy", "ShortfallDensity", "ShortfallTransfer",
-           "ConductorTail", "RamanujanMainTerm", "ModelAbsoluteMean")
+           "ConductorTail", "RamanujanMainTerm", "ModelAbsoluteMean", "WideMinorMean",
+           "CommonKernelTail", "CommonArcProjection", "CommonModelMean", "UnconditionalDensity")
 
 
 def verified_input(commit, name, digest):
@@ -72,6 +85,12 @@ def replay(build):
     env = dict(os.environ, LEAN_PATH=str(build) + os.pathsep + lake("printenv", "LEAN_PATH"))
     for name, source in INPUTS.items():
         (build / f"{name}.lean").write_bytes(verified_input(*source))
+    density_lines = verified_input(*DENSITY_INPUT).decode().splitlines(keepends=True)
+    density_modules = []
+    for name, dependency, first, last, suffix in DENSITY_SECTIONS:
+        section = "".join(density_lines[first - 1:last])
+        (build / f"{name}.lean").write_text(f"import {dependency}\n" + section + suffix)
+        density_modules.append(name)
     gaps = json.loads((ROOT / "research/gaps.json").read_text())["gaps"]
     statements = {gap["id"]: gap["statement"] for gap in gaps}
     (build / "FrozenBulk.lean").write_text(frozen_target(statements[GAP_ID]))
@@ -102,11 +121,18 @@ def replay(build):
         "  GoldbachMinor.certified_bulk_iff_count_floor\n"
         "#print axioms PEqualNP.Outside.L_goldbach_bulk_count_equivalence\n"
     )
+    density = statements["L-goldbach-bulk-signed-exception-density"]
+    (build / "CatalogueSignedDensity.lean").write_text(
+        "import UnconditionalDensity\nset_option autoImplicit false\n"
+        f"theorem PEqualNP.Outside.L_goldbach_bulk_signed_exception_density : {density} :=\n"
+        "  GoldbachMinor.dyadic_frozen_exceptional_density 2 (by decide)\n"
+        "#print axioms PEqualNP.Outside.L_goldbach_bulk_signed_exception_density\n"
+    )
     for name in MODULES:
         (build / f"{name}.lean").write_bytes((HERE / f"{name}.lean").read_bytes())
-    names = [*INPUTS, "FrozenBulk", *MODULES, "CatalogueEquivalence", "CatalogueMajorFloor", "CatalogueCountFloor"]
+    names = [*INPUTS, *density_modules, "FrozenBulk", *MODULES, "CatalogueEquivalence", "CatalogueMajorFloor", "CatalogueCountFloor", "CatalogueSignedDensity"]
     for name in names:
-        flags = ["-DwarningAsError=true"] if name not in INPUTS else []
+        flags = ["-DwarningAsError=true"] if name not in INPUTS and name not in density_modules else []
         if name in ("FrozenBulk", "CatalogueEquivalence"):
             flags.append("-Dlinter.unusedVariables=false")
         print(f"Compiling {name}", flush=True)

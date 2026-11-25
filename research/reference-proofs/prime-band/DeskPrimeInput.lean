@@ -5,7 +5,7 @@ namespace GoldbachMinor
 open Finset Filter GoldbachWeight
 open scoped Topology
 
-private theorem desk_unit_mean (q a : ℕ) (hq : 0<q) (ha : a.Coprime q) :
+theorem desk_unit_mean (q a : ℕ) (hq : 0<q) (ha : a.Coprime q) :
     GoldbachMajorArc.unitMean q a=(((ArithmeticFunction.moebius q:ℝ)/q.totient:ℝ):ℂ) := by
   rw [GoldbachMajorArc.unitMean_eq_ram ha]
   push_cast
