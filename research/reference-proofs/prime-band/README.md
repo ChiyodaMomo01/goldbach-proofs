@@ -378,6 +378,16 @@ At $d=2$ this gives the proposed catalogue entry with its original arcs, high-pr
 
 The checker extracts five sections from the pinned [PR #1667 proof](https://github.com/CGandGameEngineLearner/goldbach-proofs/blob/813ca8c4a3e6ab6ef53180fc5a2c56275a19db88/lean/PEqualNP/Outside/L_goldbach_bulk_density_one.lean). It verifies the full source digest before extraction. The selected sections contain the Vaughan estimate, the fourth-moment estimate, the Dirichlet kernel coefficients, the arbitrary-cutoff square-model error and the rational-arc geometry. They retain the upstream proof's credits, including the OpenAI Vaughan development, DFQDZZ's #316 major-arc estimates, and the finite Fourier work used in #1667. ([Extraction ranges and pinned inputs](check.py))
 
+### Counting the remaining exceptions
+
+Fix a real tolerance $\varepsilon>0$ and an integer window endpoint $X$. Consider the even targets $n$ with $X/2\le n<X$. Write $F$ for the subset on which the frozen real integral is below $-\varepsilon n$. Let $B$ consist of the targets where the catalogue major-arc model exceeds the real part of the common wide-arc model by more than $\varepsilon n/4$. For all sufficiently large $X$,
+
+$$
+\#F\;\le\;\#B+\frac{128X}{\varepsilon^2(\log X)^2}.
+$$
+
+Indeed, a target in $F$ outside $B$ must have a common minor-arc coefficient of magnitude at least $\varepsilon X/8$. Summing its squared magnitude over these targets and applying the common-spectrum energy estimate gives the displayed term. A quantitative upper bound for $\#B$ would therefore transfer directly to the original exceptional set. ([Exact theorem and constants](WideExceptionalCount.lean))
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序核对固定版本的弧不交引理、截断尺度引理以及 PR #316、#1667 的源码摘要，随后编译各证明模块。它还从目录逐字读取前缀等价式、主弧下界、计数等价式和有符号下界的例外密度命题，检查证明是否具有相应的类型，最后用 Lean 内核重检所有模块。（[复核程序](check.py)）

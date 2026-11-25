@@ -47,7 +47,8 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "ArcMassNormalization", "ProgressionConductors", "ModelProgressionMean", "ProgressionWitness",
            "ShortfallEnergy", "ShortfallDensity", "ShortfallTransfer",
            "ConductorTail", "RamanujanMainTerm", "ModelAbsoluteMean", "WideMinorMean",
-           "CommonKernelTail", "CommonArcProjection", "CommonModelMean", "UnconditionalDensity")
+           "CommonKernelTail", "CommonArcProjection", "CommonModelMean", "UnconditionalDensity",
+           "WideExceptionalCount")
 
 
 def verified_input(commit, name, digest):
