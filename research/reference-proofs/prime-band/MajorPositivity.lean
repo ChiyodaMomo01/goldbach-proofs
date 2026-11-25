@@ -332,10 +332,10 @@ theorem full_prime_major_floor (v : VaughanMajorArcEstimate) : ∃ c : ℝ, ∃ 
 
 /-- With the analytic major-arc estimate as input, the frozen bulk floor would
 give ordinary two-prime representations for all sufficiently large even targets. -/
-theorem bulk_implies_eventual_goldbach (v : VaughanMajorArcEstimate) (bulk : FrozenBulk.BulkFloor) :
+theorem bulk_implies_eventual_goldbach_of_fit (fit : MajorModelFits) (bulk : FrozenBulk.BulkFloor) :
     ∃ N:ℕ, ∀ n≥N, Even n → ∃ p r : ℕ, p.Prime ∧ r.Prime ∧ p+r=n := by
   have cp : 0<archimedeanMass 1/4 := div_pos archimedean_one_pos (by norm_num)
-  obtain ⟨N,hN⟩ := (bulk_iff_classical_count_floor v).mp bulk _ cp
+  obtain ⟨N,hN⟩ := (bulk_iff_count_of_fit fit).mp bulk _ cp
   refine ⟨max N 1,fun n hn he => ?_⟩
   have np : 0<(n:ℝ) := by exact_mod_cast (show 0<n by omega)
   have pos : 0<goldbachCount n := by
@@ -350,6 +350,10 @@ theorem bulk_implies_eventual_goldbach (v : VaughanMajorArcEstimate) (bulk : Fro
       simp [primeLog,r]
     · simp [primeLog,p]
   linarith
+
+theorem bulk_implies_eventual_goldbach (v : VaughanMajorArcEstimate) (bulk : FrozenBulk.BulkFloor) :
+    ∃ N:ℕ, ∀ n≥N, Even n → ∃ p r : ℕ, p.Prime ∧ r.Prime ∧ p+r=n :=
+  bulk_implies_eventual_goldbach_of_fit (major_model_negligible v) bulk
 
 #print axioms full_prime_major_floor
 #print axioms bulk_implies_eventual_goldbach

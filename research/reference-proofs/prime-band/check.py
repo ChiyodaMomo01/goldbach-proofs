@@ -18,8 +18,10 @@ GAP_ID = "L-goldbach-bulk-signed-floor"
 MAJOR_FLOOR_ID = "L-goldbach-arc-major-floor"
 MAJOR_FLOOR_SHA = "bf48b018f6adf0e5b9f483b4ff86195417f66788610313aacfbecfb3f6082902"
 STATEMENT_SHA = "5cac9d374fe0214eb2fa65bcc0541c9b2dcf3f5f6ad52c7e9f5af0b41e39d37d"
-# Hashes recorded in the accepted manifests for the disjointness and cutoff-scale lemmas.
+# The geometry inputs match the accepted manifests. The analytic input is pinned to PR #316.
 INPUTS = {
+    "UpstreamMajor316": ("e4ab24712555ae8c2c926adf19d368a9fb392c35", "L_goldbach_arc_major_floor",
+                         "c7897e1d13873589cecb7f0703084e14bd86996534b59eb8079e2a597008ed56"),
     "UpstreamDisjoint": ("93d33090fdfc93fb272dde08cb463f3bff3c64ce", "L_goldbach_arc_disjoint",
                          "e4fa0e9d68118ed961750de4f554996978e49646a49213ae05330d01aef920bc"),
     "UpstreamScale": ("4a29eb4239368944efb5c486fe59e10d85629cbd", "L_goldbach_arc_cutoff_scale",
@@ -29,7 +31,7 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "GoldbachTruncation", "SingularSeriesFactors", "SingularSeriesDivisors", "SingularSeriesWindow",
            "SingularSeriesTransfer", "ExactFirstBand", "NonresonantBand", "ResonantMean", "FirstBandSineIntegral",
            "AveragedBand", "ConductorEuler", "VaughanAlignment", "InfiniteBand",
-           "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity")
+           "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput")
 
 
 def verified_input(commit, name, digest):
@@ -41,7 +43,7 @@ def verified_input(commit, name, digest):
         with urlopen(f"{UPSTREAM}/{commit}/{path}", timeout=30) as response:
             data = response.read()
     if hashlib.sha256(data).hexdigest() != digest:
-        raise ValueError(f"Source hash differs from the accepted manifest for {name}")
+        raise ValueError(f"Source hash differs from the pinned digest for {name}")
     return data
 
 
@@ -90,9 +92,16 @@ def replay(build):
         "  simpa only [catalogueMajorValue,mul_comm] using h n hn he\n"
         "#print axioms catalogue_major_floor_of_vaughan\n"
     )
+    count = statements["L-goldbach-bulk-count-equivalence"]
+    (build / "CatalogueCountFloor.lean").write_text(
+        "import DeskPrimeInput\nset_option autoImplicit false\n"
+        f"theorem PEqualNP.Outside.L_goldbach_bulk_count_equivalence : {count} :=\n"
+        "  GoldbachMinor.certified_bulk_iff_count_floor\n"
+        "#print axioms PEqualNP.Outside.L_goldbach_bulk_count_equivalence\n"
+    )
     for name in MODULES:
         (build / f"{name}.lean").write_bytes((HERE / f"{name}.lean").read_bytes())
-    names = [*INPUTS, "FrozenBulk", *MODULES, "CatalogueEquivalence", "CatalogueMajorFloor"]
+    names = [*INPUTS, "FrozenBulk", *MODULES, "CatalogueEquivalence", "CatalogueMajorFloor", "CatalogueCountFloor"]
     for name in names:
         flags = ["-DwarningAsError=true"] if name not in INPUTS else []
         if name in ("FrozenBulk", "CatalogueEquivalence"):

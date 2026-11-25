@@ -45,12 +45,15 @@ theorem major_plus_minor (Q n : ℕ) (scale : 2*Q^2<n) (w : ℕ→ℝ) :
   simp_rw [eq]
   exact full_projection n (by omega) w
 
-theorem bulk_pair_model_error (v : VaughanMajorArcEstimate) (ε : ℝ) (hε : 0<ε) :
+def MajorModelFits : Prop := ∀ ε : ℝ, 0<ε → ∀ᶠ n : ℕ in atTop,
+  ‖catalogueMajorValue (catalogueCutoff n) n (high n)-(catalogueMajorModel n:ℂ)‖ ≤ ε*n
+
+theorem bulk_pair_model_error (fit : MajorModelFits) (ε : ℝ) (hε : 0<ε) :
     ∀ᶠ n : ℕ in atTop, |(FrozenBulk.deskI n (FrozenBulk.deskHigh n) (FrozenBulk.deskHigh n)).re-
       (pairMass n 0 (high n)-catalogueMajorModel n)|≤ε*n := by
   obtain ⟨S,hS⟩ : ∃ S:ℕ, ∀ n≥S, 2*(catalogueCutoff n)^2<n :=
     PEqualNP.Outside.L_goldbach_arc_cutoff_scale
-  filter_upwards [eventually_ge_atTop S,major_model_negligible v ε hε] with n hn err
+  filter_upwards [eventually_ge_atTop S,fit ε hε] with n hn err
   have exactValue := congrArg Complex.re (major_plus_minor _ n (hS n hn) (high n))
   simp only [Complex.add_re,Complex.ofReal_re] at exactValue
   rw [catalogue_bulk_arithmetic n (hS n hn)]
@@ -62,14 +65,14 @@ theorem bulk_pair_model_error (v : VaughanMajorArcEstimate) (ε : ℝ) (hε : 0<
 
 /-- The frozen signed minor-arc floor is precisely a one-sided estimate on the
 diagonal prime pairs against the finite, actual-width major-arc model. -/
-theorem bulk_iff_pair_floor (v : VaughanMajorArcEstimate) :
+theorem bulk_iff_pair_floor (fit : MajorModelFits) :
     FrozenBulk.BulkFloor ↔ ∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
       catalogueMajorModel n ≤ pairMass n 0 (high n)+ε*n := by
   change (∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
     -(ε*n) ≤ (FrozenBulk.deskI n (FrozenBulk.deskHigh n) (FrozenBulk.deskHigh n)).re) ↔ _
   constructor <;> intro h ε ep <;>
     obtain ⟨A,hA⟩ := h (ε/2) (half_pos ep) <;>
-    obtain ⟨M,hM⟩ := eventually_atTop.mp (bulk_pair_model_error v (ε/2) (half_pos ep)) <;>
+    obtain ⟨M,hM⟩ := eventually_atTop.mp (bulk_pair_model_error fit (ε/2) (half_pos ep)) <;>
     refine ⟨max A M,fun n hn he => ?_⟩ <;>
     obtain ⟨l,u⟩ := abs_le.mp (hM n (by omega)) <;>
     linarith only [l,u,hA n (by omega) he]
@@ -98,16 +101,21 @@ private theorem diagonal_error (ε : ℝ) (ep : 0<ε) : ∀ᶠ n : ℕ in atTop,
 
 /-- The equivalent remaining lower bound uses the ordinary ordered, log-weighted
 binary Goldbach count, and the exact widths used in the catalogue's main term. -/
-theorem bulk_iff_classical_count_floor (v : VaughanMajorArcEstimate) :
+theorem bulk_iff_count_of_fit (fit : MajorModelFits) :
     FrozenBulk.BulkFloor ↔ ∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
       catalogueMajorModel n ≤ goldbachCount n+ε*n := by
-  rw [bulk_iff_pair_floor v]
+  rw [bulk_iff_pair_floor fit]
   constructor <;> intro h ε ep <;>
     obtain ⟨A,hA⟩ := h (ε/2) (half_pos ep) <;>
     obtain ⟨M,hM⟩ := eventually_atTop.mp (diagonal_error (ε/2) (half_pos ep)) <;>
     refine ⟨max A M,fun n hn he => ?_⟩ <;>
     obtain ⟨l,u⟩ := hM n (by omega) <;>
     nlinarith only [l,u,hA n (by omega) he,mul_nonneg ep.le (Nat.cast_nonneg (α:=ℝ) n)]
+
+theorem bulk_iff_classical_count_floor (v : VaughanMajorArcEstimate) :
+    FrozenBulk.BulkFloor ↔ ∀ ε:ℝ, 0<ε → ∃ N:ℕ, ∀ n≥N, Even n →
+      catalogueMajorModel n ≤ goldbachCount n+ε*n :=
+  bulk_iff_count_of_fit (major_model_negligible v)
 
 #print axioms bulk_iff_classical_count_floor
 #print axioms major_plus_minor

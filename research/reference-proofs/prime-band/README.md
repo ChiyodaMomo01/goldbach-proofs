@@ -243,9 +243,15 @@ As a consequence, Vaughan's Theorem 5 implies the catalogue's full-prime major-a
 
 [Upstream PR #316](https://github.com/CGandGameEngineLearner/goldbach-proofs/pull/316) by DFQDZZ supplies a separate formal proof of the major-arc floor via Siegel–Walfisz and a discrete kernel. Its proof uses a one-third denominator-one bound. The half-mass estimate above applies to the continuous model and its finite cutoffs.
 
+### Discharging the analytic input for the count equivalence
+
+The proof of the count equivalence also runs using the checked source from DFQDZZ's [PR #316, fixed revision](https://github.com/DFQDZZ/goldbach-proofs/blob/e4ab24712555ae8c2c926adf19d368a9fb392c35/lean/PEqualNP/Outside/L_goldbach_arc_major_floor.lean). The checker verifies the source digest, compiles it with the pinned Mathlib and imports its intermediate estimates. In particular, the prefix-error estimate, its logarithmic decay, and the rational-arc perturbation estimate suffice on the catalogue's actual arcs. Its discrete kernel includes the endpoint zero. Removing that endpoint costs at most one in the normalized exponential sum.
+
+Consequently the equivalence between the frozen high-prime floor and $M(n)\le R(n)+\varepsilon n$ has **no external analytic hypothesis**. The high-prime floor alone then implies a two-prime representation for every sufficiently large even integer. Whether the high-prime floor itself holds remains open here. The earlier formulation using Vaughan's Theorem 5 is an alternative proof with an explicit literature input. ([Bridge from the pinned prime-sum estimates](DeskPrimeInput.lean), [finite lower bound](MajorPositivity.lean))
+
 ### 本地复核
 
-在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，为两个既有输入读取已核验的固定版本，随后编译各证明模块。最后一步直接读取目录中 `L-goldbach-bulk-prefix-equivalence` 的完整声明，用等价定理逐字对接该类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）
+在仓库根目录执行以下命令。检查程序从当前目录清单逐字读取目标命题并比对摘要，核对固定版本的弧不交引理、截断尺度引理和 PR #316 的源码摘要，随后编译各证明模块。最后一步从目录读取前缀等价式、主弧下界和计数等价式的完整声明，检查证明的类型，并对所有模块做 Lean 内核重检。（[复核程序](check.py)）
 
 ```sh
 (cd lean && lake exe cache get)

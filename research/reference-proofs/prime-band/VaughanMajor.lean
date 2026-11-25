@@ -73,7 +73,7 @@ def VaughanMajorArcEstimate : Prop :=
       ((((ArithmeticFunction.moebius q:ℝ)/q.totient:ℝ):ℂ)*discreteSpectrum n β)‖ ≤
       C*n*Real.exp (-c*Real.sqrt (Real.log n))
 
-private theorem arc_transfer (n q a : ℕ) (w : ℕ→ℝ) (β D : ℝ) (hq : 0<q)
+theorem arc_transfer (n q a : ℕ) (w : ℕ→ℝ) (β D : ℝ) (hq : 0<q)
     (close : ∀ t, ‖GoldbachWeight.spectrum n w t-GoldbachWeight.spectrum n primeLog t‖ ≤ Real.log 4*cubeCutoff n)
     (h : ‖GoldbachWeight.spectrum n primeLog ((a:ℝ)/q+β)-
         ((((ArithmeticFunction.moebius q:ℝ)/q.totient:ℝ):ℂ)*discreteSpectrum n β)‖ ≤ D) :
@@ -164,6 +164,10 @@ private theorem three_errors (c C : ℝ) (hc : 0<c) : ∀ᶠ n : ℕ in atTop,
   apply (le_div_iff₀ (pow_pos zp 7)).mpr
   change (_ + _ + _)*z^7 ≤ 3*(n:ℝ)
   linarith only [a,b,d]
+
+theorem truncation_mesh_envelope : ∀ᶠ n : ℕ in atTop,
+    Real.log 4*cubeCutoff n+2*Real.pi*(Real.log n)^3 ≤ 3*n/(Real.log n)^7 := by
+  simpa using three_errors 1 0 one_pos
 
 /-- Uniform conversion of Vaughan's full-prime, discrete estimate to the
 catalogue's continuous estimate for a weight with controlled truncation at every point of every actual arc. -/
