@@ -46,9 +46,9 @@ MODULES = ("BandGeometry", "BandArithmetic", "BandMask", "BandPairs", "BandReduc
            "OuterArcModel", "VaughanMajor", "MajorPairFloor", "MajorPositivity", "DeskPrimeInput", "MajorModelGrowth", "ProgressionMean",
            "ArcMassNormalization", "ProgressionConductors", "ModelProgressionMean", "ProgressionWitness",
            "ShortfallEnergy", "ShortfallDensity", "ShortfallTransfer",
-           "ConductorTail", "RamanujanMainTerm", "ModelAbsoluteMean", "WideMinorMean",
+           "ConductorTail", "RamanujanMainTerm", "TargetConductorMoment", "ModelAbsoluteMean", "WideMinorMean",
            "CommonKernelTail", "CommonArcProjection", "CommonModelMean", "UnconditionalDensity",
-           "WideExceptionalCount", "QuantitativeExceptionalCount")
+           "WideExceptionalCount", "QuantitativeExceptionalCount", "TargetExceptions", "TwicePrimeDensity")
 
 
 def verified_input(commit, name, digest):

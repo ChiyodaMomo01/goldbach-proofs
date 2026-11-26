@@ -403,6 +403,29 @@ The constant $C$ is finite. The Euler product for the square-root moment has pri
 
 **Size of the constant.** A separate [integer-arithmetic calculation](conductor_moment.py) gives $14.8<C<15$. Unique factorization identifies the moment with the product over primes of $1+2\sqrt p/(p-1)^2$. For a sieve endpoint $Y>1$, the sum of the omitted increments is at most $t=4/((1-1/Y)^2\sqrt{Y})$, by comparing the sum of $m^{-3/2}$ over integers $m>Y$ with its integral. When $t<1$, the omitted product lies between $1$ and $1/(1-t)$ by expansion of the geometric series. The script uses $Y=10^6$, integer square roots and outward rounding for every factor. Run `python3 research/reference-proofs/prime-band/conductor_moment.py` to reproduce the rational endpoints. The Lean theorem above uses the exact moment $C$.
 
+### Individual targets and prime midpoints
+
+For a positive target $n$, write $H(n)=\prod_{p\mid n}(1+\sqrt p/(p-1))$, with one factor per distinct prime divisor. Let $\omega(n)$ denote their number. Then $H(n)\le 3^{\omega(n)}$. For the normalized Ramanujan coefficient $a_q(n)$ of denominator $q$, the pointwise estimate
+
+$$
+\sum_{q\ge1}\sqrt q\,|a_q(n)|\le C H(n)
+$$
+
+uses the same fixed moment $C$ as the window estimate above. To see the arithmetic dependence, expand the finite Euler product. A prime dividing $n$ contributes $\sqrt p/(p-1)$ to the local increment. Every other prime contributes the target-one increment $\sqrt p/(p-1)^2$. The product at target one is bounded by $C$. This controls the two major-arc approximations at each target separately. ([Local product and uniform bound](TargetConductorMoment.lean), [catalogue model](ModelAbsoluteMean.lean), [common model](CommonModelMean.lean))
+
+Fix $\varepsilon>0$. For sufficiently large $X$ and $X/2\le n\le X$, if the frozen real part falls below $-\varepsilon n$, either the common minor coefficient has magnitude at least $\varepsilon X/8$, or $\varepsilon\lfloor\log_2(n+2)\rfloor<32 C H(n)$. For any fixed upper bound on $\omega(n)$ the second alternative eventually disappears. The first alternative still allows failures at individual targets. ([Pointwise alternatives](TargetExceptions.lean))
+
+Let $P_j$ be the primes $j<p\le2j$. For targets $n=2p$ there are at most two distinct prime divisors. The common-minor energy bound then controls the numerator below, and the prime number theorem bounds the size of $P_j$ from below. For all sufficiently large $j$,
+
+$$
+\frac{\#\{p\in P_j:I(2p)<-\varepsilon(2p)\}}{\#P_j}
+\le \frac{1280}{\varepsilon^2\log(2j)}.
+$$
+
+Here $I$ denotes the original real high-prime minor-arc integral. This is a relative-density conclusion on a sparse family. The all-even exceptional estimate of order $j/\log j$ by itself leaves enough room for failures at every prime midpoint. ([Relative fraction in Lean](TwicePrimeDensity.lean), [pinned Mathlib prime number theorem](https://github.com/leanprover-community/mathlib4/blob/fc4f59e577feb1a4956671bc04ac18aaaf8cd842/Mathlib/NumberTheory/LSeries/WeakPNT.lean))
+
+There is also a statement about actual representations. Define $D(p)$ as the number of **ordered** pairs of distinct primes $a,b$ with $a+b=2p$. Put $c=\tfrac18\int_{-1}^1 (\sin(\pi t)/(\pi t))^2\,dt>0$, with the integrand assigned its continuous value at zero. The proportion of $p\in P_j$ for which $D(p)<c(2p)/\log^2(2p)$ is at most $1280/(c^2\log(2j))$ for sufficiently large $j$. The proof uses the positive major-arc floor, transfers the signed estimate to the weighted Goldbach count and removes the $(p,p)$ term. Reversing a pair counts it a second time. ([Non-diagonal prime pairs and shortfall theorem](TwicePrimeDensity.lean))
+
 ### 本地复核
 
 在仓库根目录执行以下命令。检查程序核对固定版本的弧不交引理、截断尺度引理以及 PR #316、#1667 的源码摘要，随后编译各证明模块。它还从目录逐字读取前缀等价式、主弧下界、计数等价式和有符号下界的例外密度命题，检查证明是否具有相应的类型，最后用 Lean 内核重检所有模块。（[复核程序](check.py)）

@@ -106,6 +106,23 @@ private theorem wide_grows : Tendsto wideCutoff atTop atTop := by
   exact (Nat.le_log_of_pow_le (by decide : 1<2) (by omega : 2^k ≤ n+2)).trans
     (Nat.le_self_pow (by decide : 20≠0) _)
 
+private theorem error_slope (Q : ℕ) (hQ : 0<Q) (q : ℕ) (hq : 0<q) :
+    errorFactor Q q * Q ≤ 6*q := by
+  have h := (le_div_iff₀ (by exact_mod_cast hQ : (0:ℝ)<Q)).mp
+    (min_le_right (4:ℝ) ((4*q+2:ℝ)/Q))
+  have one : (1:ℝ) ≤ q := by exact_mod_cast hq
+  exact h.trans (by linarith)
+
+theorem common_model_pointwise_rate (Q X n : ℕ) (hQ : 0<Q) (sep : 2*Q^2<X)
+    (hn : n≤X) (half : X≤2*n) :
+    |(commonArcModel Q X n).re-2*twinPrimeConstant*n*binaryShape n n| ≤
+      n*(6*targetFactor n*conductorSqrtMoment / Real.sqrt Q) := by
+  have loss := target_cutoff_rate n Q (by omega) hQ 6 (by norm_num) (errorFactor Q)
+    (fun q => (error_bounds ..).1) (fun q _ => (error_bounds Q q).2.trans (by norm_num)) (error_slope Q hQ)
+  apply (anchored_error Q X n hQ sep hn half).trans
+  simpa only [localError,mul_assoc,tsum_mul_left] using
+    (mul_le_mul_of_nonneg_left loss (Nat.cast_nonneg (α:=ℝ) n))
+
 /-- Quantitative estimate with a common cutoff Q for all frequencies in the window. -/
 theorem dyadic_common_model_rate (d j Q : ℕ) (hd : 0 < d) (hj : 0 < j)
     (hQ : 0 < Q) (sep : 2*Q^2 < 2*d*j) :
@@ -120,12 +137,7 @@ theorem dyadic_common_model_rate (d j Q : ℕ) (hd : 0 < d) (hj : 0 < j)
       (fun q => mul_nonneg (pos q) (error_bounds ..).1)
       (fun q => mul_le_mul_of_nonneg_left (error_bounds Q q).2 (pos q))
   have rate := conductor_cutoff_rate Q hQ 6 (by norm_num) (errorFactor Q)
-    (fun q => (error_bounds ..).1) (fun q _ => (error_bounds Q q).2.trans (by norm_num)) (by
-      intro q hq
-      have h := (le_div_iff₀ (by exact_mod_cast hQ : (0:ℝ)<Q)).mp
-        (min_le_right (4:ℝ) ((4*q+2:ℝ)/Q))
-      have one : (1:ℝ) ≤ q := by exact_mod_cast hq
-      exact h.trans (by linarith))
+    (fun q => (error_bounds ..).1) (fun q _ => (error_bounds Q q).2.trans (by norm_num)) (error_slope Q hQ)
   apply le_trans (b:=∑' q, col q) _ ?_
   · let T := Ico j (2*j)
     let W := ∑ i ∈ T, (d:ℝ)*i

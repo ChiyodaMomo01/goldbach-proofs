@@ -121,6 +121,22 @@ theorem conductorMass_sqrt_summable :
 /-- A fixed finite constant for the absolute denominator tail on every window. -/
 noncomputable def conductorSqrtMoment : ℝ := ∑' q : ℕ, Real.sqrt q * conductorMass q
 
+/-- Interpolate a uniform bound with a linear cutoff bound. -/
+theorem cutoff_factor_sqrt_le (Q q : ℕ) (hQ : 0<Q) (A : ℝ) (hA : 0≤A)
+    (u : ℝ) (cap : u≤A) (slope : u*Q ≤ A*q) :
+    u * Real.sqrt Q ≤ A * Real.sqrt q := by
+  have Qp : (0:ℝ) < Q := by exact_mod_cast hQ
+  by_cases h : q ≤ Q
+  · have order := Real.sqrt_le_sqrt (show (q:ℝ) ≤ Q by exact_mod_cast h)
+    apply le_of_mul_le_mul_right (a:=Real.sqrt Q) _ (Real.sqrt_pos.mpr Qp)
+    calc
+      _ = u * Q := by rw [mul_assoc,Real.mul_self_sqrt Qp.le]
+      _ ≤ A * q := slope
+      _ = A * Real.sqrt q * Real.sqrt q := by rw [mul_assoc,Real.mul_self_sqrt (Nat.cast_nonneg _)]
+      _ ≤ _ := mul_le_mul_of_nonneg_left order (mul_nonneg hA (Real.sqrt_nonneg _))
+  · exact (mul_le_mul_of_nonneg_right cap (Real.sqrt_nonneg _)).trans
+      (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast (Nat.le_of_not_ge h))) hA)
+
 /-- Sum a bounded cutoff error that also grows at most linearly with q/Q. -/
 theorem conductor_cutoff_rate (Q : ℕ) (hQ : 0 < Q) (A : ℝ) (hA : 0 ≤ A)
     (f : ℕ → ℝ) (hf : ∀ q, 0 ≤ f q) (cap : ∀ q, 0 < q → f q ≤ A)
@@ -133,17 +149,7 @@ theorem conductor_cutoff_rate (Q : ℕ) (hQ : 0 < Q) (A : ℝ) (hA : 0 ≤ A)
   have le (q : ℕ) : conductorMass q * f q ≤ g q := by
     rcases Nat.eq_zero_or_pos q with rfl|hq
     · simp [g,conductorMass]
-    have mono : f q * Real.sqrt Q ≤ A * Real.sqrt q := by
-      by_cases h : q ≤ Q
-      · have order := Real.sqrt_le_sqrt (show (q:ℝ) ≤ Q by exact_mod_cast h)
-        apply le_of_mul_le_mul_right (a:=Real.sqrt Q) _ root
-        calc
-          _ = f q * Q := by rw [mul_assoc,Real.mul_self_sqrt Qp.le]
-          _ ≤ A * q := slope q hq
-          _ = A * Real.sqrt q * Real.sqrt q := by rw [mul_assoc,Real.mul_self_sqrt (Nat.cast_nonneg _)]
-          _ ≤ _ := mul_le_mul_of_nonneg_left order (mul_nonneg hA (Real.sqrt_nonneg _))
-      · exact (mul_le_mul_of_nonneg_right (cap q hq) root.le).trans
-          (mul_le_mul_of_nonneg_left (Real.sqrt_le_sqrt (by exact_mod_cast (Nat.le_of_not_ge h))) hA)
+    have mono := cutoff_factor_sqrt_le Q q hQ A hA (f q) (cap q hq) (slope q hq)
     have row := mul_le_mul_of_nonneg_left ((le_div_iff₀ root).mpr mono) (mass_nonneg q)
     exact row.trans_eq (by dsimp [g]; ring)
   apply ((sg.of_nonneg_of_le (fun q => mul_nonneg (mass_nonneg q) (hf q)) le).tsum_le_tsum le sg).trans_eq
